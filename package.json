@@ -1,0 +1,15 @@
+{
+  "name": "walmart-ca-pickup-finder",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "build": "node build.mjs"
+  },
+  "devDependencies": {
+    "esbuild": "^0.24.0",
+    "vitest": "^2.1.0"
+  }
+}
