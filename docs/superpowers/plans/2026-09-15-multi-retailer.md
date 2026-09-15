@@ -653,7 +653,8 @@ git commit -m "feat: bestbuy url adapter"
 - Create: `test/bestbuy-parse.test.js`
 
 **Interfaces:**
-- Produces: `parseProduct(json) -> Item`, `parseStores(json) -> Array<{ id, name, address, postalCode, lat, lon, distanceKm }>`, `parseAvailability(json) -> Map<storeId, status>`. Field names below are the expected ones; replace them with the names recorded in `docs/bestbuy-ca-endpoints.md`.
+- Consumes: `docs/bestbuy-ca-endpoints.md` (authoritative field names) and the fixtures `test/fixtures/bestbuy-product.json` (catalog query response), `bestbuy-stores.json` (`/api/v3/json/locations` response), `bestbuy-availability.json` (`/ecomm-api/availability/products` response).
+- Produces: `parseProduct(json) -> Item`, `parseStores(json) -> Array<{ id, name, address, postalCode, lat, lon, distanceKm }>`, `parseAvailability(json) -> { aggregate: string, statuses: Map<locationId, "available"|"out_of_stock"|"unknown"> }`.
 
 - [ ] **Step 1: Write the failing tests against the fixtures**
 
@@ -667,31 +668,53 @@ import { parseProduct, parseStores, parseAvailability } from "../src/retailers/b
 const load = (n) => JSON.parse(readFileSync(new URL(`./fixtures/${n}`, import.meta.url), "utf8"));
 
 describe("bestbuy parsers", () => {
-  it("parseProduct maps the product fields", () => {
+  it("parseProduct maps the catalog item", () => {
     const item = parseProduct(load("bestbuy-product.json"));
     expect(item.retailer).toBe("bestbuy");
     expect(item.id).toMatch(/^\d+$/);
     expect(item.name.length).toBeGreaterThan(3);
-    expect(item.url).toMatch(/^https:\/\/www\.bestbuy\.ca\//);
-    expect(item.priceString).toMatch(/^\$/);
+    expect(item.url).toMatch(/^https:\/\/www\.bestbuy\.ca\/en-ca\/product\//i);
+    expect(item.priceString).toMatch(/^\$\d+\.\d{2}$/);
+    expect(item.imageUrl).toMatch(/^https:\/\//);
   });
-  it("parseStores maps id, address and coordinates", () => {
+  it("parseProduct throws not_found when the catalog has no items", () => {
+    expect(() => parseProduct({ currentPage: 1, total: 0, totalPages: 1, pageSize: 20, items: [] }))
+      .toThrow(expect.objectContaining({ code: "not_found" }));
+  });
+  it("parseProduct throws api_changed on an unexpected shape", () => {
+    expect(() => parseProduct({ foo: 1 })).toThrow(expect.objectContaining({ code: "api_changed" }));
+  });
+  it("parseStores maps id, address, coordinates and distance", () => {
     const stores = parseStores(load("bestbuy-stores.json"));
     expect(stores.length).toBeGreaterThan(0);
     for (const s of stores) {
       expect(s.id).toMatch(/^\d+$/);
       expect(typeof s.lat).toBe("number");
       expect(typeof s.lon).toBe("number");
-      expect(s.address).toContain(s.postalCode.slice(0, 3));
+      expect(s.address).toContain(s.postalCode);
+      expect(typeof s.distanceKm).toBe("number");
     }
   });
-  it("parseAvailability maps every location to a status", () => {
-    const av = parseAvailability(load("bestbuy-availability.json"));
-    expect(av.size).toBeGreaterThan(0);
-    for (const status of av.values()) expect(["available", "out_of_stock", "unknown"]).toContain(status);
+  it("parseStores returns an empty list for an unrecognised postal code", () => {
+    expect(parseStores({ Brand: "BestBuyCanada", currentPage: 0, pageSize: 0, totalPages: 0, total: 0, locations: [] })).toEqual([]);
   });
-  it("parseProduct throws not_found for an unknown sku payload", () => {
-    expect(() => parseProduct({})).toThrow(expect.objectContaining({ code: "not_found" }));
+  it("parseAvailability maps hasInventory / supportsFulfillment per location and keeps the aggregate", () => {
+    const { aggregate, statuses } = parseAvailability(load("bestbuy-availability.json"));
+    expect(typeof aggregate).toBe("string");
+    expect(statuses.size).toBeGreaterThan(0);
+    for (const status of statuses.values()) expect(["available", "out_of_stock", "unknown"]).toContain(status);
+  });
+  it("parseAvailability applies the documented mapping", () => {
+    const json = { availabilities: [{ sku: "1", pickup: { status: "InStock", locations: [
+      { locationKey: "1", hasInventory: true, quantityOnHand: 3, supportsFulfillment: true },
+      { locationKey: "2", hasInventory: false, quantityOnHand: 0, supportsFulfillment: true },
+      { locationKey: "3", hasInventory: false, quantityOnHand: 0, supportsFulfillment: false },
+    ] } }] };
+    const { statuses } = parseAvailability(json);
+    expect([...statuses]).toEqual([["1", "available"], ["2", "out_of_stock"], ["3", "unknown"]]);
+  });
+  it("parseAvailability throws api_changed when availabilities is missing", () => {
+    expect(() => parseAvailability({})).toThrow(expect.objectContaining({ code: "api_changed" }));
   });
 });
 ```
@@ -700,55 +723,63 @@ describe("bestbuy parsers", () => {
 
 Run: `npx vitest run test/bestbuy-parse.test.js` -> FAIL (module missing).
 
-- [ ] **Step 3: Implement against the documented fields**
+- [ ] **Step 3: Implement**
 
-`src/retailers/bestbuy/parse.js` (expected shape; rename per the doc):
+`src/retailers/bestbuy/parse.js`:
 
 ```js
+// Pure parsers for bestbuy.ca responses. Field names: docs/bestbuy-ca-endpoints.md
 import { WalmartApiError, apiChanged } from "../../lib/errors.js";
 
 const ORIGIN = "https://www.bestbuy.ca";
-// Expected pickup status strings; confirm the exact set in docs/bestbuy-ca-endpoints.md.
-const STATUS = { InStock: "available", InStoreOnly: "available", OutOfStock: "out_of_stock", SoldOut: "out_of_stock" };
 
+// /api/v1/catalog/query response -> Item. total 0 / no items = unknown SKU.
 export function parseProduct(json) {
-  const p = json?.product ?? json;
-  if (!p || typeof p !== "object" || !p.sku) throw new WalmartApiError("not_found");
-  if (!p.name) throw apiChanged(JSON.stringify(json));
+  if (!json || typeof json !== "object" || !Array.isArray(json.items)) throw apiChanged(JSON.stringify(json));
+  const p = json.items[0];
+  if (!p) throw new WalmartApiError("not_found");
+  if (!p.sku || !p.name) throw apiChanged(JSON.stringify(json));
   const price = p.salePrice ?? p.regularPrice;
+  const path = typeof p.productUrl === "string" && p.productUrl.startsWith("/") ? p.productUrl.replace(/^\/en-CA\//, "/en-ca/") : `/en-ca/product/${p.sku}`;
   return {
     id: String(p.sku),
     name: String(p.name),
-    priceString: price == null ? "" : `$${Number(price).toFixed(2)}`,
+    priceString: Number.isFinite(Number(price)) ? `$${Number(price).toFixed(2)}` : "",
     imageUrl: p.thumbnailImage ? String(p.thumbnailImage) : null,
-    url: p.productUrl ? ORIGIN + p.productUrl : `${ORIGIN}/en-ca/product/${p.sku}`,
+    url: ORIGIN + path,
     retailer: "bestbuy",
   };
 }
 
+// /api/v3/json/locations response -> stores with coordinates (no availability).
 export function parseStores(json) {
-  const list = json?.locations ?? json?.stores;
+  const list = json?.locations;
   if (!Array.isArray(list)) throw apiChanged(JSON.stringify(json));
   return list.map((s) => ({
-    id: String(s.locationKey ?? s.id),
+    id: String(s.locationId ?? ""),
     name: String(s.name ?? ""),
-    address: [s.address?.street, s.address?.city, s.address?.province].filter(Boolean).join(", "),
-    postalCode: String(s.address?.postalCode ?? ""),
-    lat: Number(s.latitude ?? s.geoPoint?.latitude),
-    lon: Number(s.longitude ?? s.geoPoint?.longitude),
+    address: [s.address1, [s.city, [s.region, s.postalCode].filter(Boolean).join(" ")].filter(Boolean).join(", ")].filter(Boolean).join(", "),
+    postalCode: String(s.postalCode ?? ""),
+    lat: Number(s.lat),
+    lon: Number(s.lng),
     distanceKm: Number.isFinite(Number(s.distance)) ? Number(s.distance) : null,
   }));
 }
 
-// -> Map<locationId, status>
+// /ecomm-api/availability/products response (one SKU) -> per-location statuses.
+// hasInventory true -> available; false with supportsFulfillment -> out_of_stock; otherwise unknown.
+// Locations the service does not carry are absent from the response: callers treat missing ids as unknown.
 export function parseAvailability(json) {
-  const list = json?.availabilities?.[0]?.pickup?.locations ?? json?.locations;
-  if (!Array.isArray(list)) throw apiChanged(JSON.stringify(json));
-  return new Map(list.map((l) => [String(l.locationKey ?? l.id), STATUS[l.status] ?? (l.quantityOnHand > 0 ? "available" : "unknown")]));
+  const a = json?.availabilities?.[0];
+  if (!a || !a.pickup || !Array.isArray(a.pickup.locations)) throw apiChanged(JSON.stringify(json));
+  const statuses = new Map();
+  for (const l of a.pickup.locations) {
+    const status = l.hasInventory === true ? "available" : l.supportsFulfillment === true ? "out_of_stock" : "unknown";
+    statuses.set(String(l.locationKey), status);
+  }
+  return { aggregate: String(a.pickup.status ?? ""), statuses };
 }
 ```
-
-(`WalmartApiError` is the shared error class; renaming it to `ApiError` across the repo is optional and out of scope.)
 
 - [ ] **Step 4: Run tests, commit**
 
@@ -761,16 +792,18 @@ git commit -m "feat: bestbuy parsers"
 
 ---
 
-### Task 8: Best Buy client and nationwide search
+### Task 8: Best Buy client, store list and nationwide search
 
 **Files:**
 - Create: `src/retailers/bestbuy/api.js`
 - Create: `src/retailers/bestbuy/search.js`
+- Create: `tools/build-bestbuy-stores.mjs`
+- Create: `src/retailers/bestbuy/stores-ca.json` (generated by the tool)
 - Create: `test/bestbuy-api.test.js`, `test/bestbuy-search.test.js`
 
 **Interfaces:**
 - Consumes: parsers from Task 7; `haversineKm`, `locateUser` from `src/lib/geo.js`; `WalmartApiError`, `apiChanged` from `src/lib/errors.js`.
-- Produces: `getItem(sku) -> Item`, `getStores(postalCode) -> stores near postal code (parsed)`, `getAllStores() -> every store`, `getAvailability(sku, locationIds[]) -> Map`, and `findNearestInStock({ sku, postalCode, nearby, checkedIds, onProgress, api }) -> SearchResult`.
+- Produces: `api.js` exporting `buildProductUrl(sku)`, `buildStoresUrl(postalCode)`, `buildAvailabilityUrl(sku, locationIds)`, `getItem(sku) -> Item`, `getStores(postalCode) -> parsed stores near the postal code`, `getAvailability(sku, locationIds) -> { aggregate, statuses }` (one call; caller batches), `LOCATIONS_PER_CALL = 90`. `search.js` exporting `findNearestInStock({ sku, nearby, checkedIds, onProgress, api, catalog, gapMs }) -> SearchResult`. `stores-ca.json` shaped `{ generatedAt, stores: [{ id, name, address, postalCode, lat, lon }] }`.
 
 - [ ] **Step 1: Write the failing client test**
 
@@ -779,90 +812,116 @@ git commit -m "feat: bestbuy parsers"
 ```js
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { readFileSync } from "node:fs";
-import { getItem, getStores, getAvailability, buildAvailabilityUrl } from "../src/retailers/bestbuy/api.js";
+import { getItem, getStores, getAvailability, buildAvailabilityUrl, buildStoresUrl, buildProductUrl, LOCATIONS_PER_CALL } from "../src/retailers/bestbuy/api.js";
 
 const fx = (n) => readFileSync(new URL(`./fixtures/${n}`, import.meta.url), "utf8");
 const jsonResponse = (body, status = 200) => new Response(body, { status, headers: { "content-type": "application/json" } });
 
-describe("bestbuy api", () => {
+describe("bestbuy request builders", () => {
+  it("buildAvailabilityUrl sends the standardproduct accept parameter, pipe-joined locations and the sku", () => {
+    const url = new URL(buildAvailabilityUrl("19446111", ["927", "196"]));
+    expect(url.origin + url.pathname).toBe("https://www.bestbuy.ca/ecomm-api/availability/products");
+    expect(url.searchParams.get("accept")).toBe("application/vnd.bestbuy.standardproduct.v1+json");
+    expect(url.searchParams.get("accept-language")).toBe("en-CA");
+    expect(url.searchParams.get("locations")).toBe("927|196");
+    expect(url.searchParams.get("skus")).toBe("19446111");
+    expect(url.searchParams.has("postalCode")).toBe(false);
+  });
+  it("buildStoresUrl asks for everything in range in one page", () => {
+    const url = new URL(buildStoresUrl("M5V 3L9"));
+    expect(url.pathname).toBe("/api/v3/json/locations");
+    expect(url.searchParams.get("postalCode")).toBe("M5V 3L9");
+    expect(url.searchParams.get("pageSize")).toBe("1000");
+    expect(url.searchParams.get("lang")).toBe("en-CA");
+  });
+  it("buildProductUrl queries the catalog by id", () => {
+    const url = new URL(buildProductUrl("19446111"));
+    expect(url.pathname).toBe("/api/v1/catalog/query");
+    expect(url.searchParams.get("ids")).toBe("19446111");
+    expect(url.searchParams.get("lang")).toBe("en-CA");
+  });
+  it("LOCATIONS_PER_CALL stays under the measured 96 ceiling", () => {
+    expect(LOCATIONS_PER_CALL).toBeLessThanOrEqual(96);
+  });
+});
+
+describe("bestbuy fetching", () => {
   let fetchMock;
   beforeEach(() => { fetchMock = vi.fn(); vi.stubGlobal("fetch", fetchMock); });
   afterEach(() => vi.unstubAllGlobals());
 
-  it("buildAvailabilityUrl lists the sku and the locations", () => {
-    const url = new URL(buildAvailabilityUrl("18291446", ["1", "2"], "M5V 3L9"));
-    expect(url.hostname).toBe("www.bestbuy.ca");
-    expect(url.searchParams.get("skus")).toBe("18291446");
-    expect(url.searchParams.get("locations")).toBe("1|2");
-  });
-  it("getAvailability sends credentials and parses statuses", async () => {
+  it("getAvailability parses statuses", async () => {
     fetchMock.mockResolvedValue(jsonResponse(fx("bestbuy-availability.json")));
-    const av = await getAvailability("18291446", ["1"], "M5V 3L9");
-    expect(av.size).toBeGreaterThan(0);
-    expect(fetchMock.mock.calls[0][1].credentials).toBe("include");
+    const { statuses } = await getAvailability("19446111", ["927"]);
+    expect(statuses.size).toBeGreaterThan(0);
+  });
+  it("getAvailability refuses more ids than one call accepts", async () => {
+    await expect(getAvailability("1", Array.from({ length: LOCATIONS_PER_CALL + 1 }, (_, i) => String(i)))).rejects.toThrow(/locations/);
+    expect(fetchMock).not.toHaveBeenCalled();
   });
   it("getItem parses the product", async () => {
     fetchMock.mockResolvedValue(jsonResponse(fx("bestbuy-product.json")));
-    expect((await getItem("18291446")).retailer).toBe("bestbuy");
+    expect((await getItem("19446111")).retailer).toBe("bestbuy");
   });
   it("getStores parses the locator", async () => {
     fetchMock.mockResolvedValue(jsonResponse(fx("bestbuy-stores.json")));
     expect((await getStores("M5V 3L9")).length).toBeGreaterThan(0);
   });
-  it("maps 403 HTML to verification and 429 to rate_limited", async () => {
+  it("maps HTML/403 to verification, 429 to rate_limited, other non-2xx JSON to api_changed", async () => {
     fetchMock.mockResolvedValueOnce(new Response("<html>", { status: 403, headers: { "content-type": "text/html" } }));
     await expect(getItem("1")).rejects.toMatchObject({ code: "verification" });
     fetchMock.mockResolvedValueOnce(new Response("", { status: 429 }));
     await expect(getItem("1")).rejects.toMatchObject({ code: "rate_limited" });
+    fetchMock.mockResolvedValueOnce(jsonResponse('{"errorCode":"1103","errorMessage":"Invalid query parameter"}', 400));
+    await expect(getItem("1")).rejects.toMatchObject({ code: "api_changed" });
   });
 });
 ```
 
 - [ ] **Step 2: Run to verify failure**
 
-Run: `npx vitest run test/bestbuy-api.test.js` -> FAIL.
+Run: `npx vitest run test/bestbuy-api.test.js` -> FAIL (module missing).
 
 - [ ] **Step 3: Implement the client**
 
-`src/retailers/bestbuy/api.js` (URLs, params and headers come from the doc; the structure stays):
+`src/retailers/bestbuy/api.js`:
 
 ```js
-// bestbuy.ca internal endpoints. Must run inside a bestbuy.ca page (cookies, bot clearance).
-// Endpoint details: docs/bestbuy-ca-endpoints.md
+// bestbuy.ca REST endpoints. No cookies, headers or hashes are needed (docs/bestbuy-ca-endpoints.md),
+// but the calls still run from the bestbuy.ca content script so every retailer works the same way.
 import { parseProduct, parseStores, parseAvailability } from "./parse.js";
 import { WalmartApiError, apiChanged } from "../../lib/errors.js";
 
 const ORIGIN = "https://www.bestbuy.ca";
-const LOCATIONS_PER_CALL = 50; // set from the doc's measured maximum
+// The gateway accepts up to 96 ids per call (97 was rejected upstream); keep headroom.
+export const LOCATIONS_PER_CALL = 90;
 
-export function buildHeaders() {
-  return { accept: "application/json", "content-type": "application/json" }; // plus any tenant headers the doc lists
+export function buildProductUrl(sku) {
+  return `${ORIGIN}/api/v1/catalog/query?${new URLSearchParams({ ids: String(sku), lang: "en-CA" })}`;
 }
 
-export function buildAvailabilityUrl(sku, locationIds, postalCode) {
-  const q = new URLSearchParams({ skus: String(sku), locations: locationIds.join("|"), postalCode, accept: "application/json" });
+export function buildStoresUrl(postalCode) {
+  return `${ORIGIN}/api/v3/json/locations?${new URLSearchParams({ lang: "en-CA", postalCode, pageSize: "1000" })}`;
+}
+
+// The `accept` media type is a query parameter here, not a header; without it the
+// response has no per-store locations.
+export function buildAvailabilityUrl(sku, locationIds) {
+  const q = new URLSearchParams({
+    accept: "application/vnd.bestbuy.standardproduct.v1+json",
+    "accept-language": "en-CA",
+    locations: locationIds.join("|"),
+    skus: String(sku),
+  });
   return `${ORIGIN}/ecomm-api/availability/products?${q}`;
 }
 
-export function buildStoresUrl(postalCode, { lat, lon, radiusKm, count } = {}) {
-  const q = new URLSearchParams({ postalCode: postalCode ?? "", lang: "en-CA" });
-  if (lat != null) { q.set("lat", lat); q.set("lng", lon); }
-  if (radiusKm != null) q.set("radius", radiusKm);
-  if (count != null) q.set("count", count);
-  return `${ORIGIN}/api/v2/json/locations?${q}`; // replace with the documented locator URL
-}
-
-export function buildProductUrl(sku) {
-  return `${ORIGIN}/api/v2/json/product/${encodeURIComponent(String(sku))}?lang=en-CA`; // replace with the documented URL
-}
-
 async function get(url) {
-  const res = await globalThis.fetch(url, { credentials: "include", headers: buildHeaders() });
+  const res = await globalThis.fetch(url, { credentials: "omit", headers: { accept: "application/json" } });
   const text = await res.text();
   const contentType = res.headers.get("content-type") ?? "";
   if (res.status === 403 || /text\/html/i.test(contentType) || /^\s*</.test(text)) throw new WalmartApiError("verification");
   if (res.status === 429) throw new WalmartApiError("rate_limited");
-  if (res.status === 404) throw new WalmartApiError("not_found");
   let json;
   try { json = JSON.parse(text); } catch { throw apiChanged(text); }
   if (!res.ok) throw apiChanged(text);
@@ -870,17 +929,13 @@ async function get(url) {
 }
 
 export async function getItem(sku) { return parseProduct(await get(buildProductUrl(sku))); }
-export async function getStores(postalCode, opts) { return parseStores(await get(buildStoresUrl(postalCode, opts))); }
-export async function getAvailability(sku, locationIds, postalCode) {
-  const out = new Map();
-  for (let i = 0; i < locationIds.length; i += LOCATIONS_PER_CALL) {
-    const batch = locationIds.slice(i, i + LOCATIONS_PER_CALL);
-    for (const [k, v] of parseAvailability(await get(buildAvailabilityUrl(sku, batch, postalCode)))) out.set(k, v);
-  }
-  return out;
+export async function getStores(postalCode) { return parseStores(await get(buildStoresUrl(postalCode))); }
+
+// One availability call; callers batch ids in chunks of LOCATIONS_PER_CALL.
+export async function getAvailability(sku, locationIds) {
+  if (locationIds.length > LOCATIONS_PER_CALL) throw new Error(`getAvailability: at most ${LOCATIONS_PER_CALL} locations per call`);
+  return parseAvailability(await get(buildAvailabilityUrl(sku, locationIds)));
 }
-// All stores in Canada: the locator with a country-wide radius; the doc says which parameters achieve that.
-export async function getAllStores() { return getStores(null, { lat: 56, lon: -96, radiusKm: 5000, count: 500 }); }
 ```
 
 - [ ] **Step 4: Write the failing search test**
@@ -893,40 +948,83 @@ import { findNearestInStock } from "../src/retailers/bestbuy/search.js";
 import { haversineKm } from "../src/lib/geo.js";
 
 const USER = { lat: 43.64, lon: -79.39 };
-const stores = [
-  { id: "1", name: "Toronto", address: "", postalCode: "M5V", lat: 43.65, lon: -79.40 },
-  { id: "2", name: "Ottawa", address: "", postalCode: "K1P", lat: 45.42, lon: -75.70 },
-  { id: "3", name: "Vancouver", address: "", postalCode: "V6B", lat: 49.28, lon: -123.12 },
+const catalog = [
+  { id: "1", name: "Toronto", address: "A", postalCode: "M5V 3L9", lat: 43.65, lon: -79.40 },
+  { id: "2", name: "Ottawa", address: "B", postalCode: "K1P 1J1", lat: 45.42, lon: -75.70 },
+  { id: "3", name: "Vancouver", address: "C", postalCode: "V6B 1A1", lat: 49.28, lon: -123.12 },
+  { id: "4", name: "Halifax", address: "D", postalCode: "B3J 1S9", lat: 44.65, lon: -63.58 },
 ];
-const withDist = (s) => ({ ...s, distanceKm: haversineKm(USER, s), status: "out_of_stock", url: "https://www.bestbuy.ca/x" });
+const near = (s, status = "out_of_stock") => ({ ...s, distanceKm: haversineKm(USER, s), status, url: "https://www.bestbuy.ca/x" });
 
-function fakeApi(inStock) {
+function fakeApi(inStock, { aggregate = "OutOfStock", perCall = 2 } = {}) {
   return {
-    getAllStores: vi.fn(async () => stores),
-    getAvailability: vi.fn(async (_sku, ids) => new Map(ids.map((id) => [id, inStock.has(id) ? "available" : "out_of_stock"]))),
+    LOCATIONS_PER_CALL: perCall,
+    getAvailability: vi.fn(async (_sku, ids) => ({
+      aggregate, statuses: new Map(ids.map((id) => [id, inStock.has(id) ? "available" : "out_of_stock"])),
+    })),
   };
 }
 
 describe("bestbuy findNearestInStock", () => {
-  it("checks every store in one pass and sorts hits by distance from the user", async () => {
-    const api = fakeApi(new Set(["3", "2"]));
-    const res = await findNearestInStock({ sku: "1", postalCode: "M5V 3L9", nearby: [withDist(stores[0])], api, storeCoords: stores });
+  it("returns nearby in-stock stores without any call when one is already available", async () => {
+    const api = fakeApi(new Set());
+    const res = await findNearestInStock({ sku: "1", nearby: [near(catalog[0], "available")], api, catalog });
+    expect(api.getAvailability).not.toHaveBeenCalled();
+    expect(res.inStock.map((s) => s.id)).toEqual(["1"]);
     expect(res.complete).toBe(true);
-    expect(res.inStock.map((s) => s.id)).toEqual(["2", "3"]);
-    expect(res.inStock[0].distanceKm).toBeCloseTo(haversineKm(USER, stores[1]), 0);
+  });
+  it("checks the remaining stores nearest-first in batches and stops at the first batch with a hit", async () => {
+    const api = fakeApi(new Set(["3", "4"]), { perCall: 1 });
+    const progress = vi.fn();
+    const res = await findNearestInStock({ sku: "1", nearby: [near(catalog[0])], api, catalog, onProgress: progress });
+    // Order by distance from Toronto: Ottawa (2), Halifax (4), Vancouver (3) -> two calls, stop at Halifax.
+    expect(api.getAvailability.mock.calls.map((c) => c[1])).toEqual([["2"], ["4"]]);
+    expect(res.inStock.map((s) => s.id)).toEqual(["4"]);
+    expect(res.inStock[0].distanceKm).toBeCloseTo(haversineKm(USER, catalog[3]), 0);
+    expect(res.inStock[0].url).toBe("https://www.bestbuy.ca/en-ca/product/1");
+    expect(res.complete).toBe(true);
     expect(res.searched).toBe(3);
+    expect(new Set(res.checkedIds)).toEqual(new Set(["1", "2", "4"]));
+    expect(progress).toHaveBeenCalled();
+  });
+  it("reports a complete, empty search when nothing is in stock anywhere", async () => {
+    const api = fakeApi(new Set(), { perCall: 3 });
+    const res = await findNearestInStock({ sku: "1", nearby: [near(catalog[0])], api, catalog });
+    expect(res.inStock).toEqual([]);
+    expect(res.complete).toBe(true);
+    expect(res.searched).toBe(4);
+  });
+  it("short-circuits when the aggregate says the item is never sold in stores", async () => {
+    const api = fakeApi(new Set(), { aggregate: "OnlineOnly", perCall: 1 });
+    const res = await findNearestInStock({ sku: "1", nearby: [near(catalog[0])], api, catalog });
+    expect(api.getAvailability).toHaveBeenCalledTimes(1);
+    expect(res.complete).toBe(true);
+    expect(res.inStock).toEqual([]);
+  });
+  it("treats ids missing from a response as unknown and still counts them as checked", async () => {
+    const api = fakeApi(new Set(), { perCall: 3 });
+    api.getAvailability.mockResolvedValueOnce({ aggregate: "OutOfStock", statuses: new Map([["2", "out_of_stock"]]) });
+    const res = await findNearestInStock({ sku: "1", nearby: [near(catalog[0])], api, catalog });
+    expect(res.searched).toBe(4);
+    expect(res.complete).toBe(true);
   });
   it("returns partial results with rateLimited on 429", async () => {
-    const api = fakeApi(new Set());
-    api.getAvailability.mockRejectedValue(Object.assign(new Error("429"), { code: "rate_limited" }));
-    const res = await findNearestInStock({ sku: "1", postalCode: "M5V 3L9", nearby: [withDist(stores[0])], api, storeCoords: stores });
+    const api = fakeApi(new Set(), { perCall: 1 });
+    api.getAvailability.mockRejectedValueOnce(Object.assign(new Error("429"), { code: "rate_limited" }));
+    const res = await findNearestInStock({ sku: "1", nearby: [near(catalog[0])], api, catalog });
     expect(res.rateLimited).toBe(true);
     expect(res.complete).toBe(false);
   });
+  it("skips ids already checked in an earlier round", async () => {
+    const api = fakeApi(new Set(), { perCall: 3 });
+    await findNearestInStock({ sku: "1", nearby: [near(catalog[0])], checkedIds: ["2", "3"], api, catalog });
+    expect(api.getAvailability.mock.calls[0][1]).toEqual(["4"]);
+  });
   it("reports noLocation when the user position cannot be estimated", async () => {
     const api = fakeApi(new Set());
-    const res = await findNearestInStock({ sku: "1", postalCode: "M5V 3L9", nearby: [], api, storeCoords: stores });
+    const res = await findNearestInStock({ sku: "1", nearby: [], api, catalog });
     expect(res.noLocation).toBe(true);
+    expect(api.getAvailability).not.toHaveBeenCalled();
   });
 });
 ```
@@ -936,53 +1034,114 @@ describe("bestbuy findNearestInStock", () => {
 `src/retailers/bestbuy/search.js`:
 
 ```js
-// Best Buy answers pickup availability for many stores per call, so the
-// nationwide search is one pass over every store, then a sort by distance.
+// Best Buy answers pickup availability for up to LOCATIONS_PER_CALL stores per call,
+// so the nationwide search is a nearest-first sweep over the store catalog in a
+// handful of batches, stopping at the first batch that contains stock.
 import { haversineKm, locateUser } from "../../lib/geo.js";
 
 const PRODUCT_URL = (sku) => `https://www.bestbuy.ca/en-ca/product/${sku}`;
+const NEVER_IN_STORE = new Set(["OnlineOnly", "NotAvailable"]);
 
-// api: { getAllStores(), getAvailability(sku, ids, postalCode) }
-// storeCoords: optional pre-fetched store list (tests); otherwise api.getAllStores() is used.
-export async function findNearestInStock({ sku, postalCode, nearby, checkedIds = [], onProgress, api, storeCoords }) {
-  const all = storeCoords ?? await api.getAllStores();
-  const coords = new Map(all.map((s) => [s.id, s]));
+// api: { LOCATIONS_PER_CALL, getAvailability(sku, ids) -> { aggregate, statuses } }
+// catalog: [{ id, name, address, postalCode, lat, lon }] — every store in Canada.
+export async function findNearestInStock({ sku, nearby, checkedIds = [], onProgress, api, catalog, gapMs = 0 }) {
+  const coords = new Map(catalog.map((s) => [s.id, s]));
+  const inStock = nearby.filter((s) => s.status === "available");
+  const checked = new Set([...nearby.map((s) => s.id), ...checkedIds]);
+  const done = (complete, rateLimited = false) => ({
+    inStock: inStock.sort((a, b) => (a.distanceKm ?? Infinity) - (b.distanceKm ?? Infinity)),
+    searched: checked.size, checkedIds: [...checked], complete, rateLimited,
+  });
+  if (inStock.length) return done(true);
   const user = locateUser(nearby, coords);
-  if (!user) {
-    return { inStock: nearby.filter((s) => s.status === "available"), searched: nearby.length, checkedIds: nearby.map((s) => s.id), complete: false, rateLimited: false, noLocation: true };
+  if (!user) return { ...done(false), noLocation: true };
+
+  const todo = catalog
+    .filter((s) => !checked.has(s.id))
+    .map((s) => ({ s, km: haversineKm(user, s) }))
+    .sort((a, b) => a.km - b.km);
+  for (let i = 0; i < todo.length; i += api.LOCATIONS_PER_CALL) {
+    const batch = todo.slice(i, i + api.LOCATIONS_PER_CALL);
+    let result;
+    try {
+      if (gapMs && i) await new Promise((r) => setTimeout(r, gapMs));
+      result = await api.getAvailability(sku, batch.map(({ s }) => s.id));
+    } catch (err) {
+      if (err?.code === "rate_limited") return done(false, true);
+      throw err;
+    }
+    for (const { s, km } of batch) {
+      checked.add(s.id); // ids the service does not carry are absent from the response: unknown, but checked
+      if (result.statuses.get(s.id) === "available") {
+        inStock.push({ id: s.id, name: s.name, address: s.address, postalCode: s.postalCode, distanceKm: km, status: "available", url: PRODUCT_URL(sku) });
+      }
+    }
+    onProgress?.({ calls: i / api.LOCATIONS_PER_CALL + 1, searched: checked.size, remaining: todo.length - i - batch.length });
+    if (inStock.length || NEVER_IN_STORE.has(result.aggregate)) break;
   }
-  const known = new Map(nearby.map((s) => [s.id, s.status]));
-  const todo = all.filter((s) => !known.has(s.id)).map((s) => s.id);
-  let rateLimited = false;
-  let statuses = new Map();
-  try {
-    statuses = await api.getAvailability(sku, todo, postalCode);
-  } catch (err) {
-    if (err?.code === "rate_limited") rateLimited = true; else throw err;
-  }
-  const checked = new Set([...known.keys(), ...statuses.keys(), ...checkedIds]);
-  onProgress?.({ calls: 1, searched: checked.size, remaining: all.length - checked.size });
-  const inStock = [];
-  for (const s of nearby) if (s.status === "available") inStock.push(s);
-  for (const [id, status] of statuses) {
-    if (status !== "available" || known.has(id)) continue;
-    const c = coords.get(id);
-    inStock.push({ id, name: c?.name ?? id, address: c?.address ?? "", postalCode: c?.postalCode ?? "", distanceKm: c ? haversineKm(user, c) : null, status, url: PRODUCT_URL(sku) });
-  }
-  inStock.sort((a, b) => (a.distanceKm ?? Infinity) - (b.distanceKm ?? Infinity));
-  return { inStock, searched: checked.size, checkedIds: [...checked], complete: !rateLimited, rateLimited };
+  return done(true);
 }
 ```
 
-If Task 5 concluded the availability endpoint is per-store only, replace this file's body with the walmart pattern: `import { findNearestInStock as probeSearch } from "../../lib/stock-search.js"` and call it with `fetchAround: (lat, lon) => api.getStoresAround(lat, lon, sku)` and `catalog: all`, exactly as `src/retailers/walmart/content.js` does.
-
-- [ ] **Step 6: Run tests, commit**
+- [ ] **Step 6: Run tests**
 
 Run: `npx vitest run` -> pass.
 
+- [ ] **Step 7: Build the store list**
+
+`tools/build-bestbuy-stores.mjs` (plain Node; the endpoint needs no cookies):
+
+```js
+// Dev-only. Builds src/retailers/bestbuy/stores-ca.json by sweeping
+// /api/v3/json/locations (fixed ~50 km radius around a postal code) over seed
+// postal codes across Canada and de-duplicating on locationId.
+//   node tools/build-bestbuy-stores.mjs
+import { writeFileSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
+import { buildStoresUrl } from "../src/retailers/bestbuy/api.js";
+import { parseStores } from "../src/retailers/bestbuy/parse.js";
+
+const OUT = join(dirname(fileURLToPath(import.meta.url)), "..", "src", "retailers", "bestbuy", "stores-ca.json");
+const GAP_MS = 1000;
+// One postal code per metro / region; the locator's radius is ~50 km so neighbouring seeds overlap.
+const SEEDS = [
+  "M5V 3L9", "L4T 9Z0", "L6Y 4R9", "L1H 7K5", "L3R 9W3", "L7L 6J8", "L8P 4S3", "L2R 7K6", "N2G 4X6", "N6A 3N7", "N9A 6K3", "N7T 7Y7",
+  "L4M 1A1", "K7L 5C3", "K8N 3A5", "K1P 1J1", "K2C 3P4", "P3E 3K9", "P7B 5E1", "P4N 2K7", "P6A 1Y9", "P1B 2H3", "N1H 3A4", "N8X 1J3",
+  "H2Y 1C6", "H4T 1E7", "J4K 5G4", "J7Y 4V2", "G1R 4P5", "G6V 8N6", "J1H 5H9", "G8Z 3G7", "J2S 2M2", "G7H 5B8", "G9A 5J3", "J8X 2A2", "J9X 5V7", "G4R 4K3",
+  "V6B 1A1", "V3M 1A7", "V5H 4M1", "V2X 2P2", "V3T 2W2", "V9A 1A2", "V9R 5S5", "V1Y 6M6", "V2C 1X2", "V2A 5L6", "V1L 4E3", "V2L 3G1", "V8J 1P4", "V9N 2L4", "V1A 2A9",
+  "T2P 1J9", "T3K 5P4", "T5J 0N3", "T6E 5V5", "T4N 3T7", "T1K 2R3", "T1Y 1H6", "T9H 1T6", "T8V 2Z9", "T1H 4A1", "T9E 6Z7", "T8N 4B5",
+  "S7K 0J5", "S4P 3Y2", "S6H 4H3", "S9A 2H5", "S6V 5T2",
+  "R3C 0V8", "R7A 0A1", "R8N 0Y5",
+  "B3J 1S9", "B2Y 3Y8", "B4A 3Y7", "B1P 6J7", "B4N 3E8", "B2N 5B7",
+  "E1C 1B4", "E2L 4L1", "E3B 5H1", "E2A 1V3", "E7M 2Z3", "C1A 1A1",
+  "A1B 3X5", "A2H 6J8", "A1V 1W3", "A2A 2K3", "A2N 2X5",
+  "Y1A 1A1", "X1A 2N1", "X0E 0T0",
+];
+
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+const stores = new Map();
+for (const [i, seed] of SEEDS.entries()) {
+  const res = await fetch(buildStoresUrl(seed));
+  if (!res.ok) { console.log(`${seed}: HTTP ${res.status}`); continue; }
+  const list = parseStores(await res.json());
+  let added = 0;
+  for (const s of list) if (!stores.has(s.id)) { stores.set(s.id, { id: s.id, name: s.name, address: s.address, postalCode: s.postalCode, lat: s.lat, lon: s.lon }); added++; }
+  console.log(`${i + 1}/${SEEDS.length} ${seed}: ${list.length} in range, ${added} new, ${stores.size} total`);
+  await sleep(GAP_MS);
+}
+const list = [...stores.values()].sort((a, b) => a.id.localeCompare(b.id));
+writeFileSync(OUT, JSON.stringify({ generatedAt: new Date().toISOString(), stores: list }));
+console.log(`done: ${list.length} stores -> ${OUT}`);
+```
+
+Run: `node tools/build-bestbuy-stores.mjs`. Expected: a few hundred stores (the directory sitemap lists 315; a sweep of these seeds should land within ~10% of that — if it finds far fewer, add seeds for the regions that are missing and re-run). Sanity-check: `node -e "const j=require('./src/retailers/bestbuy/stores-ca.json');console.log(j.stores.length, j.stores.filter(s=>!Number.isFinite(s.lat)).length)"` -> second number must be 0.
+
+- [ ] **Step 8: Commit**
+
 ```bash
-git add src/retailers/bestbuy/api.js src/retailers/bestbuy/search.js test/bestbuy-api.test.js test/bestbuy-search.test.js
-git commit -m "feat: bestbuy client and one-pass nationwide search"
+git add src/retailers/bestbuy/api.js src/retailers/bestbuy/search.js src/retailers/bestbuy/stores-ca.json tools/build-bestbuy-stores.mjs test/bestbuy-api.test.js test/bestbuy-search.test.js
+git commit -m "feat: bestbuy client, store list and nearest-first batched search"
 ```
 
 ---
@@ -991,11 +1150,11 @@ git commit -m "feat: bestbuy client and one-pass nationwide search"
 
 **Files:**
 - Create: `src/retailers/bestbuy/content.js`
-- Modify: `src/manifest.json`, `src/retailers/walmart/content.js` (only if its `lookup` shape needs `url`), `docs/superpowers/specs/2026-09-15-multi-retailer-design.md` status line
+- Modify: `src/manifest.json`, `docs/superpowers/specs/2026-09-15-multi-retailer-design.md` (status line), `docs/bestbuy-ca-endpoints.md` (e2e outcome)
 
 **Interfaces:**
-- Consumes: `getItem`, `getStores`, `getAvailability`, `getAllStores` from `api.js`; `findNearestInStock` from `search.js`; `rankStores` from `src/lib/rank-stores.js`; `toErrorResponse` from `src/lib/errors.js`.
-- Produces: `dist/content/bestbuy.js`; manifest entry for `https://www.bestbuy.ca/*`.
+- Consumes: `api.js` (`getItem`, `getStores`, `getAvailability`, `LOCATIONS_PER_CALL`), `search.js` (`findNearestInStock`), `stores-ca.json`, `rankStores` from `src/lib/rank-stores.js`, `toErrorResponse` from `src/lib/errors.js`.
+- Produces: `dist/content/bestbuy.js`; manifest entry for `https://www.bestbuy.ca/*`; message handling identical in shape to the walmart content script (`ping`, `lookup`, `findInStock`, `selectStore` -> unsupported).
 
 - [ ] **Step 1: Write the content script**
 
@@ -1005,32 +1164,26 @@ git commit -m "feat: bestbuy client and one-pass nationwide search"
 // Runs on https://www.bestbuy.ca/*. Answers messages from the background worker.
 import * as api from "./api.js";
 import { findNearestInStock } from "./search.js";
+import catalog from "./stores-ca.json";
 import { rankStores } from "../../lib/rank-stores.js";
 import { toErrorResponse } from "../../lib/errors.js";
 
 const NEARBY = 10;
-const STORE_CACHE_KEY = "bestbuy.stores";
-const STORE_CACHE_MS = 7 * 24 * 3600 * 1000;
+const SEARCH_GAP_MS = 1000;
+const PRODUCT_URL = (sku) => `https://www.bestbuy.ca/en-ca/product/${sku}`;
 
 function reportProgress(progress) {
   chrome.runtime.sendMessage({ type: "searchProgress", ...progress }).catch(() => {});
 }
 
-async function cachedAllStores() {
-  const { [STORE_CACHE_KEY]: c } = await chrome.storage.local.get(STORE_CACHE_KEY);
-  if (c && Date.now() - c.at < STORE_CACHE_MS) return c.stores;
-  const stores = await api.getAllStores();
-  await chrome.storage.local.set({ [STORE_CACHE_KEY]: { at: Date.now(), stores } });
-  return stores;
-}
-
-// Nearby stores with this sku's pickup status, nearest first.
+// The nearest stores to the postal code with this sku's pickup status.
 async function lookupStores(postalCode, sku) {
   const near = (await api.getStores(postalCode)).slice(0, NEARBY);
-  const status = await api.getAvailability(sku, near.map((s) => s.id), postalCode);
+  if (!near.length) return [];
+  const { statuses } = await api.getAvailability(sku, near.map((s) => s.id));
   return rankStores(near.map((s) => ({
     id: s.id, name: s.name, address: s.address, postalCode: s.postalCode, distanceKm: s.distanceKm,
-    status: status.get(s.id) ?? "unknown", url: `https://www.bestbuy.ca/en-ca/product/${sku}`,
+    status: statuses.get(s.id) ?? "unknown", url: PRODUCT_URL(sku),
   })));
 }
 
@@ -1044,12 +1197,14 @@ async function handle(msg) {
     }
     case "findInStock": {
       if (!Array.isArray(msg.nearby)) return { ok: false, code: "unknown", error: "findInStock needs the nearby store list." };
-      const storeCoords = await cachedAllStores();
-      const api2 = { ...api, getAllStores: async () => storeCoords };
-      return { ok: true, ...(await findNearestInStock({ sku: msg.itemId, postalCode: msg.postalCode, nearby: msg.nearby, checkedIds: msg.checkedIds, onProgress: reportProgress, api: api2 })) };
+      const result = await findNearestInStock({
+        sku: msg.itemId, nearby: msg.nearby, checkedIds: msg.checkedIds ?? [],
+        onProgress: reportProgress, api, catalog: catalog.stores, gapMs: SEARCH_GAP_MS,
+      });
+      return { ok: true, ...result };
     }
     case "selectStore":
-      return { ok: false, code: "unsupported", error: "Best Buy does not support selecting a store from here; open the product page." };
+      return { ok: false, code: "unsupported", error: "Best Buy does not support selecting a store from here; open the product page instead." };
     default:
       return { ok: false, code: "unknown", error: `Unknown message type: ${msg?.type}` };
   }
@@ -1066,6 +1221,7 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
 `src/manifest.json`:
 
 ```json
+"description": "Find the nearest Walmart or Best Buy store that has an item in stock for pickup.",
 "host_permissions": ["https://www.walmart.ca/*", "https://www.bestbuy.ca/*"],
 "content_scripts": [
   { "matches": ["https://www.walmart.ca/*"], "js": ["content/walmart.js"], "run_at": "document_idle" },
@@ -1073,29 +1229,43 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
 ]
 ```
 
-Also update `description` to "Find the nearest Walmart or Best Buy store that has an item in stock for pickup."
+(`name` may become "Pickup Finder (Walmart, Best Buy)"; the popup `<title>` likewise.)
+
+- [ ] **Step 2b: Retailer-neutral popup copy**
+
+In `src/popup/popup.js` `renderNearest`, the three messages that name Walmart must use the current retailer's label and host instead. Replace them with:
+
+```js
+  const label = RETAILERS[state.retailer]?.label ?? "This store";
+  const host = RETAILERS[state.retailer]?.host ?? "the site";
+  if (res.noLocation) text = "Could not work out where you are relative to the store list, so only nearby stores were checked.";
+  else if (res.rateLimited) text = `${host} rate-limited the search after ${res.searched} stores. Wait a minute or two, then keep searching.`;
+  else if (!state.inStock.length && res.complete) text = `No ${label} in Canada has this in stock for pickup (checked ${res.searched} stores).`;
+```
+
+(the remaining two branches are unchanged.) Add `src/popup/popup.js` to the commit.
 
 - [ ] **Step 3: Build and run everything**
 
 Run: `npx vitest run && npm run build && ls dist/content`
 Expected: tests pass; `walmart.js` and `bestbuy.js` present.
 
-- [ ] **Step 4: End-to-end in the debug Chrome**
+- [ ] **Step 4: End-to-end in a debug Chrome**
 
-Load `dist/` as in Task 4 step 4, open the popup page and run three lookups with `M5V 3L9`:
-1. A common Best Buy item (e.g. a DualSense controller SKU) -> nearby list with at least one "In stock", "Nearest in stock" box shows it, "Open product page" opens bestbuy.ca.
-2. A scarce item (PS5 Pro SKU) -> nearby all out of stock, progress line, then either in-stock stores far away or "No Best Buy in Canada has this in stock (checked N stores)".
-3. A nonsense SKU (`00000001`) -> "Item not found."
+Launch a scratch-profile Chrome with `--remote-debugging-port=9223 --enable-unsafe-extension-debugging --user-data-dir=<scratch dir> https://www.bestbuy.ca/en-ca`, load `dist/` with the DevTools `Extensions.loadUnpacked` command (a `loadext.mjs` helper may exist in the session scratchpad; otherwise: connect to `http://127.0.0.1:9223/json/version`'s `webSocketDebuggerUrl`, send `{"id":1,"method":"Extensions.loadUnpacked","params":{"path":"C:/Users/hmai/Desktop/opencv/walmart/dist"}}`), open `chrome-extension://<id>/popup/popup.html` in a tab and drive it (an `e2e.mjs` helper may exist; otherwise set the two inputs and `requestSubmit()` via `Runtime.evaluate`, then read `document.body.innerText` after ~20 s). Three lookups with `M5V 3L9`:
+1. `https://www.bestbuy.ca/en-ca/product/x/19491570` (DualSense controller) -> nearby list with at least one "In stock", "Nearest in stock" box, "Open product page" button opens bestbuy.ca.
+2. `https://www.bestbuy.ca/en-ca/product/x/19446111` (PS5 Slim) -> nearby list; if all out of stock, progress line then either far in-stock stores or "No Best Buy in Canada has this in stock (checked N stores)".
+3. `https://www.bestbuy.ca/en-ca/product/x/99999999` -> "Item not found."
 
-Record the outcome (including any rate-limit behaviour) in `docs/bestbuy-ca-endpoints.md`.
+Record the outcome in a short "End-to-end check" section at the end of `docs/bestbuy-ca-endpoints.md`. Close the Chrome you launched.
 
 - [ ] **Step 5: Update the spec status and commit**
 
-Change the spec's `Status:` line to "implemented for walmart + bestbuy on <date>; staples/shoppers/gamestop pending discovery".
+Change the spec's `Status:` line to "implemented for walmart + bestbuy on 2026-09-15; staples/shoppers/gamestop pending discovery".
 
 ```bash
-git add -A
-git commit -m "feat: bestbuy adapter (content script, manifest) and multi-retailer manifest"
+git add src/retailers/bestbuy/content.js src/manifest.json src/popup/popup.html docs/bestbuy-ca-endpoints.md docs/superpowers/specs/2026-09-15-multi-retailer-design.md
+git commit -m "feat: bestbuy adapter content script and multi-retailer manifest"
 ```
 
 ---
