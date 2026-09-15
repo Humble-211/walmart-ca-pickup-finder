@@ -1,0 +1,111 @@
+{
+  "id": 6671196160129,
+  "title": "Brother HL-L2405W Home Office-Ready Monochrome Laser Printer",
+  "handle": "3082604-en-brother-hl-l2405w-home-office-ready-monochrome-laser-printer",
+  "description": "With fast mobile printing, wireless or USB connectivity, flexible paper handling and an up to 2,500-page monthly print volume, the HL-L2405W offers value-packed features like 700 pages of in-box toner, free cloud applications, and the available Refresh EZ Print subscription.",
+  "published_at": "2026-08-15T09:26:51-04:00",
+  "created_at": "2024-01-31T02:15:56-05:00",
+  "vendor": "brother",
+  "type": "Voyageur_en_CA",
+  "tags": [
+    "3d_model_available:number:0",
+    "apple_airprint_21239:Yes",
+    "apple_care:number:0",
+    "auto_document_feeder_adf_8085:No",
+    "AverageOverallRating:number:4.1911",
+    "…trimmed, 180 tags total…"
+  ],
+  "price": 11999,
+  "price_min": 11999,
+  "price_max": 11999,
+  "available": true,
+  "price_varies": false,
+  "compare_at_price": 19999,
+  "compare_at_price_min": 19999,
+  "compare_at_price_max": 19999,
+  "compare_at_price_varies": false,
+  "variants": [
+    {
+      "id": 39723906269313,
+      "title": "Default",
+      "option1": "Default",
+      "option2": null,
+      "option3": null,
+      "sku": "3082604",
+      "requires_shipping": true,
+      "taxable": true,
+      "featured_image": null,
+      "available": true,
+      "name": "Brother HL-L2405W Home Office-Ready Monochrome Laser Printer",
+      "public_title": null,
+      "options": [
+        "Default"
+      ],
+      "price": 11999,
+      "weight": 0,
+      "compare_at_price": 19999,
+      "inventory_management": "shopify",
+      "barcode": "012502672715",
+      "quantity_rule": {
+        "min": 1,
+        "max": null,
+        "increment": 1
+      },
+      "quantity_price_breaks": [],
+      "requires_selling_plan": false,
+      "selling_plan_allocations": []
+    }
+  ],
+  "images": [
+    "//cdn.shopify.com/s/files/1/0036/4806/1509/products/7920638992d093607f9c0cfe95c42d069d41089c_square3082604_1.jpg?v=1776226220",
+    "//cdn.shopify.com/s/files/1/0036/4806/1509/products/f3d78665d66ad15c1cad7d699e4115b3f9ad3ea1_square3082604_2.jpg?v=1776226220",
+    "//cdn.shopify.com/s/files/1/0036/4806/1509/products/7cb132ea8543e50147f8da9191f14a479e4503a3_square3082604_3.jpg?v=1776226220"
+  ],
+  "featured_image": "//cdn.shopify.com/s/files/1/0036/4806/1509/products/7920638992d093607f9c0cfe95c42d069d41089c_square3082604_1.jpg?v=1776226220",
+  "options": [
+    {
+      "name": "VariesBy",
+      "position": 1,
+      "values": [
+        "Default"
+      ]
+    }
+  ],
+  "url": "/products/3082604-en-brother-hl-l2405w-home-office-ready-monochrome-laser-printer",
+  "media": [
+    {
+      "alt": "Brother HL-L2405W Home Office-Ready Monochrome Laser Printer-Print only",
+      "id": 22076808331393,
+      "position": 1,
+      "preview_image": {
+        "aspect_ratio": 1,
+        "height": 1000,
+        "width": 1000,
+        "src": "https://cdn.shopify.com/s/files/1/0036/4806/1509/products/7920638992d093607f9c0cfe95c42d069d41089c_square3082604_1.jpg?v=1776226220"
+      },
+      "aspect_ratio": 1,
+      "height": 1000,
+      "media_type": "image",
+      "src": "https://cdn.shopify.com/s/files/1/0036/4806/1509/products/7920638992d093607f9c0cfe95c42d069d41089c_square3082604_1.jpg?v=1776226220",
+      "width": 1000
+    },
+    {
+      "alt": "Brother HL-L2405W Home Office-Ready Monochrome Laser Printer-Monochrome laser printing",
+      "id": 22076808364161,
+      "position": 2,
+      "preview_image": {
+        "aspect_ratio": 1,
+        "height": 1000,
+        "width": 1000,
+        "src": "https://cdn.shopify.com/s/files/1/0036/4806/1509/products/f3d78665d66ad15c1cad7d699e4115b3f9ad3ea1_square3082604_2.jpg?v=1776226220"
+      },
+      "aspect_ratio": 1,
+      "height": 1000,
+      "media_type": "image",
+      "src": "https://cdn.shopify.com/s/files/1/0036/4806/1509/products/f3d78665d66ad15c1cad7d699e4115b3f9ad3ea1_square3082604_2.jpg?v=1776226220",
+      "width": 1000
+    }
+  ],
+  "requires_selling_plan": false,
+  "selling_plan_groups": []
+}
