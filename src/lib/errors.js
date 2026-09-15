@@ -1,11 +1,16 @@
+// Retailer-neutral message templates. `{host}` / `{label}` / `{stores}` are
+// substituted by `formatError` once the caller knows which adapter raised
+// the error (background.js and the retailer api.js/parse.js modules throw
+// these un-substituted; the popup fills them in for display).
 export const ERROR_MESSAGES = {
-  no_tab: "Open walmart.ca in a tab and try again.",
-  verification: "walmart.ca asked for verification. Complete it in the walmart.ca tab, then retry.",
-  invalid_postal: "Postal code not recognized by Walmart.",
+  no_tab: "Open {host} in a tab and try again.",
+  verification: "{host} asked for verification. Complete it in the {host} tab, then retry.",
+  invalid_postal: "Postal code not recognized by {label}.",
   not_found: "Item not found.",
-  api_changed: "Walmart changed its API",
-  rate_limited: "walmart.ca is rate-limiting requests. Wait a minute or two and try again.",
+  api_changed: "{label} changed its API",
+  rate_limited: "{host} is rate-limiting requests. Wait a minute or two and try again.",
   unknown: "Something went wrong.",
+  unsupported: "This store is not supported yet. Paste a product URL from {stores}.",
 };
 
 export class WalmartApiError extends Error {
@@ -17,10 +22,23 @@ export class WalmartApiError extends Error {
   }
 }
 
-// Builds the "Walmart changed its API: <raw>" message.
+// Builds the "{label} changed its API: <raw>" message (placeholder left for formatError).
 export function apiChanged(raw) {
   const snippet = String(raw ?? "").slice(0, 200);
   return new WalmartApiError("api_changed", `${ERROR_MESSAGES.api_changed}: ${snippet}`, snippet);
+}
+
+// Substitutes {host}/{label}/{stores} placeholders in a message using an adapter
+// (any object with host/label/stores fields, e.g. RETAILERS[retailer]). Falls
+// back to generic wording when adapter is missing or lacks a field.
+export function formatError(message, adapter) {
+  const host = adapter?.host ?? "the store site";
+  const label = adapter?.label ?? "The store";
+  const stores = adapter?.stores ?? "a supported store";
+  return String(message ?? "")
+    .replaceAll("{host}", host)
+    .replaceAll("{label}", label)
+    .replaceAll("{stores}", stores);
 }
 
 // Converts any thrown value into the {ok:false, code, error} wire shape.

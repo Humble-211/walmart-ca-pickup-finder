@@ -1,0 +1,161 @@
+{
+  "currentPage": 1,
+  "total": 2,
+  "totalPages": 1,
+  "pageSize": 20,
+  "items": [
+    {
+      "additionalWarranties": null,
+      "altLangSeoText": "manette-sans-fil-dualsense-de-playstation-5-pour-ps5-pc-mac-et-appareils-mobiles-noir-de-minuit",
+      "categoryIds": [
+        "26516",
+        "621715",
+        "17582853",
+        "17583390",
+        "23268565"
+      ],
+      "categoryName": "PS5 Controllers",
+      "customerRating": null,
+      "customerRatingCount": null,
+      "customerReviewCount": null,
+      "ehf": [
+        {
+          "province": "BC",
+          "amount": 0.55
+        },
+        {
+          "province": "NB",
+          "amount": 0.5
+        },
+        {
+          "province": "NL",
+          "amount": 0.45
+        },
+        {
+          "province": "NS",
+          "amount": 0.25
+        },
+        {
+          "province": "ON",
+          "amount": 0.6
+        },
+        {
+          "province": "PE",
+          "amount": 0.25
+        },
+        {
+          "province": "QC",
+          "amount": 0.55
+        },
+        {
+          "province": "SK",
+          "amount": 0.2
+        },
+        {
+          "province": "YT",
+          "amount": 0.4
+        }
+      ],
+      "hasFrenchContent": true,
+      "hideSavings": true,
+      "highResImage": "https://multimedia.bbycastatic.ca/images/common/pictures/noimage1500x1500.jpg",
+      "isAdvertised": false,
+      "isClearance": false,
+      "isFrenchCompliant": true,
+      "isInStoreOnly": false,
+      "isMarketplace": false,
+      "isOnlineOnly": false,
+      "isPreorderable": false,
+      "name": "PlayStation 5 DualSense Wireless Controller For PS5, PC, Mac & Mobile - Midnight Black",
+      "offerId": "23df4e6c-0b0a-4fcc-9cbc-2c57016b91f4",
+      "primaryParentCategoryId": "catalog/hierarchies/1/categories/23268565",
+      "productType": "REGULAR",
+      "productUrl": "/en-CA/product/playstation-5-dualsense-wireless-controller-for-ps5-pc-mac-mobile-midnight-black/19491570",
+      "regularPrice": 94.99,
+      "requiresAgeVerification": false,
+      "saleEndDate": null,
+      "salePrice": 94.99,
+      "sellerId": "bbyca",
+      "seoText": "playstation-5-dualsense-wireless-controller-for-ps5-pc-mac-mobile-midnight-black",
+      "shortDescription": "Ignite your gaming nights on your PS5 console with the DualSense Midnight Black wireless controller. Part of a new line-up of galaxy-themed colours, this sleek design takes inspiration from how we view the wonders of space through the night sky, with subtle shades of black and light grey detailing.",
+      "sku": "19491570",
+      "thumbnailImage": "https://multimedia.bbycastatic.ca/multimedia/products/150x150/194/19491/19491570.jpg"
+    },
+    {
+      "additionalWarranties": null,
+      "altLangSeoText": "console-playstation-5-mince-de-1-to",
+      "categoryIds": [
+        "26516",
+        "621715",
+        "17582853",
+        "17583383"
+      ],
+      "categoryName": "PS5 Consoles",
+      "customerRating": null,
+      "customerRatingCount": null,
+      "customerReviewCount": null,
+      "ehf": [
+        {
+          "province": "BC",
+          "amount": 3.5
+        },
+        {
+          "province": "NB",
+          "amount": 3.75
+        },
+        {
+          "province": "NL",
+          "amount": 3.75
+        },
+        {
+          "province": "NS",
+          "amount": 2.25
+        },
+        {
+          "province": "ON",
+          "amount": 4.15
+        },
+        {
+          "province": "PE",
+          "amount": 2.25
+        },
+        {
+          "province": "QC",
+          "amount": 3.75
+        },
+        {
+          "province": "SK",
+          "amount": 1.25
+        },
+        {
+          "province": "YT",
+          "amount": 2.2
+        }
+      ],
+      "hasFrenchContent": true,
+      "hideSavings": true,
+      "highResImage": "https://multimedia.bbycastatic.ca/multimedia/products/1500x1500/194/19446/19446111.jpg",
+      "isAdvertised": false,
+      "isClearance": false,
+      "isFrenchCompliant": true,
+      "isInStoreOnly": false,
+      "isMarketplace": false,
+      "isOnlineOnly": false,
+      "isPreorderable": false,
+      "name": "PlayStation 5 Slim 1TB Console",
+      "offerId": "04f9ea98-f0b6-47d4-b10b-48e7e3738a42",
+      "primaryParentCategoryId": "catalog/hierarchies/1/categories/17583383",
+      "productType": "REGULAR",
+      "productUrl": "/en-CA/product/playstation-5-slim-1tb-console/19446111",
+      "regularPrice": 819.99,
+      "requiresAgeVerification": false,
+      "saleEndDate": null,
+      "salePrice": 819.99,
+      "sellerId": "bbyca",
+      "seoText": "playstation-5-slim-1tb-console",
+      "shortDescription": "Take your gaming to the next level with PlayStation 5 slim 1TB console. It's designed to deliver lightning-fast load times and breathtaking immersion. With cutting-edge features like haptic feedback, adaptive triggers, and 3D Audio, the PS5 transforms how you play and feel your games. The vertical stand is sold separately.",
+      "sku": "19446111",
+      "thumbnailImage": "https://multimedia.bbycastatic.ca/multimedia/products/150x150/194/19446/19446111.jpg"
+    }
+  ]
+}

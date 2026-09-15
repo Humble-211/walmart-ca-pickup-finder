@@ -48,12 +48,12 @@ Popup and background never call walmart.ca directly.
 | File | Responsibility | Depends on |
 |------|----------------|------------|
 | `manifest.json` | MV3. `host_permissions: ["*://www.walmart.ca/*"]`, permissions `storage`, `tabs`. Content script matches `https://www.walmart.ca/*`. | — |
-| `popup/popup.html`, `popup/popup.js`, `popup/popup.css` | Input item ID/URL, input postal code (persisted via `chrome.storage.local`), search button, results list, error banner. | `lib/parse-item-id.js` |
+| `popup/popup.html`, `popup/popup.js`, `popup/popup.css` | Input item ID/URL, input postal code (persisted via `chrome.storage.local`), search button, results list, error banner. | `retailers/walmart/urls.js` |
 | `background.js` | Message router. Locates or opens walmart.ca tab, waits for content script ready, forwards lookup, relays result/error. | — |
-| `content/index.js` | Listens for `lookup` and `selectStore` messages, orchestrates api + rank, replies. Replies `{ok:false, error}` on any throw. | `content/walmart-api.js`, `lib/rank-stores.js` |
-| `content/walmart-api.js` | `getItem(itemId)`, `findStores(postalCode, itemId, maxCount)`, `selectStore(store, postalCode)`. Builds requests for the discovered endpoints (headers, hashes, variable templates) and hands raw JSON to the parsers. | `fetch`, `lib/parse-walmart.js` |
-| `lib/parse-item-id.js` | `parseItemId(input) -> string | null`. Accepts bare numeric ID or any walmart.ca product URL (`/en/ip/<slug>/<id>`, `/fr/ip/...`, with query string). | — |
-| `lib/parse-walmart.js` | Pure parsers: raw `nearByNodes` JSON -> `Store[]` (status mapped), raw `ItemById` JSON -> `Item`. Throws `WalmartApiError` with a short reason when expected fields are missing or `errors[]` is present. | — |
+| `retailers/walmart/content.js` | Listens for `lookup` and `selectStore` messages, orchestrates api + rank, replies. Replies `{ok:false, error}` on any throw. | `retailers/walmart/api.js`, `lib/rank-stores.js` |
+| `retailers/walmart/api.js` | `getItem(itemId)`, `findStores(postalCode, itemId, maxCount)`, `selectStore(store, postalCode)`. Builds requests for the discovered endpoints (headers, hashes, variable templates) and hands raw JSON to the parsers. | `fetch`, `retailers/walmart/parse.js` |
+| `retailers/walmart/urls.js` | `parseItemId(input) -> string | null`. Accepts bare numeric ID or any walmart.ca product URL (`/en/ip/<slug>/<id>`, `/fr/ip/...`, with query string). | — |
+| `retailers/walmart/parse.js` | Pure parsers: raw `nearByNodes` JSON -> `Store[]` (status mapped), raw `ItemById` JSON -> `Item`. Throws `WalmartApiError` with a short reason when expected fields are missing or `errors[]` is present. | — |
 | `lib/rank-stores.js` | `rankStores(stores) -> Store[]`. Sorts by distance ascending only. | — |
 | `docs/walmart-ca-endpoints.md` | Record of discovered endpoints: method, URL, required headers, request body shape, response fields used. | `tools/capture.js` |
 | `tools/capture.js`, `tools/eval.js` | Dev-only. CDP network capture and in-tab JS eval against a Chrome started with `--remote-debugging-port=9222`. Used to re-discover endpoints when hashes change. Not shipped in the extension. | Node 24 |

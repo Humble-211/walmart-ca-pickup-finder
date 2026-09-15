@@ -1,0 +1,391 @@
+{
+  "Brand": "BestBuyCanada",
+  "currentPage": 1,
+  "pageSize": 5,
+  "totalPages": 1,
+  "total": 53,
+  "locations": [
+    {
+      "address1": "#406 Level Bay Street Promenade, 65 Front Street",
+      "address2": null,
+      "country": "CAN",
+      "landmark": "Union Station Toronto",
+      "phone1": "416-603-7825",
+      "phone2": "",
+      "phone3": "",
+      "services": [
+        {
+          "serviceCode": "Service2",
+          "serviceName": "Best Buy Mobile",
+          "serviceImageUri": ""
+        }
+      ],
+      "statHolidayMessage": "",
+      "lat": 43.644833,
+      "lng": -79.379433,
+      "hours": [
+        "Monday   8 AM - 7 PM",
+        "Tuesday   8 AM - 7 PM",
+        "Wednesday   8 AM - 7 PM",
+        "Thursday   8 AM - 7 PM",
+        "Friday   8 AM - 7 PM",
+        "Saturday   10 AM - 7 PM",
+        "Sunday   10 AM - 7 PM"
+      ],
+      "warehouseId": "-1",
+      "distance": 0.56,
+      "productsAvailability": [],
+      "message": "",
+      "message2": "",
+      "message3": "",
+      "timeZone": "UTC-04:00",
+      "qpu": {
+        "curbsidePickupLink": null,
+        "holdPolicy": {
+          "regularHoldInDays": 3,
+          "specialHoldDates": [
+            {
+              "readyForPickupStartDate": "2026-12-31",
+              "specialHoldInDays": 4
+            },
+            {
+              "readyForPickupStartDate": "2026-12-30",
+              "specialHoldInDays": 4
+            },
+            {
+              "readyForPickupStartDate": "2026-12-29",
+              "specialHoldInDays": 4
+            },
+            {
+              "readyForPickupStartDate": "2026-12-24",
+              "specialHoldInDays": 4
+            },
+            {
+              "readyForPickupStartDate": "2026-12-23",
+              "specialHoldInDays": 4
+            },
+            {
+              "readyForPickupStartDate": "2026-12-22",
+              "specialHoldInDays": 4
+            }
+          ]
+        },
+        "pickupOptions": [
+          "IN_STORE_PICKUP"
+        ]
+      },
+      "city": "Toronto",
+      "description": null,
+      "format": "BBY Express Stores",
+      "line1": null,
+      "line2": null,
+      "locationId": "259",
+      "name": "Best Buy Express Union Station",
+      "neighborhood": null,
+      "postalCode": "M5J 1E3",
+      "region": "ON",
+      "type": "SmallFormat",
+      "utcOffset": "UTC-04:00"
+    },
+    {
+      "address1": "220 Yonge Street",
+      "address2": null,
+      "country": "CAN",
+      "landmark": "Toronto Eaton Centre Dundas",
+      "phone1": "416-591-2224",
+      "phone2": "",
+      "phone3": "",
+      "services": [
+        {
+          "serviceCode": "Service2",
+          "serviceName": "Best Buy Mobile",
+          "serviceImageUri": ""
+        }
+      ],
+      "statHolidayMessage": "",
+      "lat": 43.654205,
+      "lng": -79.380785,
+      "hours": [
+        "Monday   10 AM - 9 PM",
+        "Tuesday   10 AM - 9 PM",
+        "Wednesday   10 AM - 9 PM",
+        "Thursday   10 AM - 9 PM",
+        "Friday   10 AM - 9 PM",
+        "Saturday   10 AM - 9 PM",
+        "Sunday   11 AM - 7 PM"
+      ],
+      "warehouseId": "-1",
+      "distance": 1.39,
+      "productsAvailability": [],
+      "message": "",
+      "message2": "",
+      "message3": "",
+      "timeZone": "UTC-04:00",
+      "qpu": {
+        "curbsidePickupLink": null,
+        "holdPolicy": {
+          "regularHoldInDays": 3,
+          "specialHoldDates": [
+            {
+              "readyForPickupStartDate": "2026-12-24",
+              "specialHoldInDays": 4
+            },
+            {
+              "readyForPickupStartDate": "2026-12-23",
+              "specialHoldInDays": 4
+            },
+            {
+              "readyForPickupStartDate": "2026-12-22",
+              "specialHoldInDays": 4
+            }
+          ]
+        },
+        "pickupOptions": [
+          "IN_STORE_PICKUP"
+        ]
+      },
+      "city": "Toronto",
+      "description": null,
+      "format": "BBY Express Stores",
+      "line1": null,
+      "line2": null,
+      "locationId": "198",
+      "name": "Best Buy Express Eaton Centre Dundas",
+      "neighborhood": null,
+      "postalCode": "M5B 2H1",
+      "region": "ON",
+      "type": "SmallFormat",
+      "utcOffset": "UTC-04:00"
+    },
+    {
+      "address1": "220 Yonge St",
+      "address2": null,
+      "country": "CAN",
+      "landmark": "Toronto Eaton Centre Queen",
+      "phone1": "416-979-7776",
+      "phone2": "",
+      "phone3": "",
+      "services": [
+        {
+          "serviceCode": "Service2",
+          "serviceName": "Best Buy Mobile",
+          "serviceImageUri": ""
+        }
+      ],
+      "statHolidayMessage": "",
+      "lat": 43.654438,
+      "lng": -79.380699,
+      "hours": [
+        "Monday   10 AM - 9 PM",
+        "Tuesday   10 AM - 9 PM",
+        "Wednesday   10 AM - 9 PM",
+        "Thursday   10 AM - 9 PM",
+        "Friday   10 AM - 9 PM",
+        "Saturday   10 AM - 9 PM",
+        "Sunday   11 AM - 7 PM"
+      ],
+      "warehouseId": "-1",
+      "distance": 1.41,
+      "productsAvailability": [],
+      "message": "",
+      "message2": "",
+      "message3": "",
+      "timeZone": "UTC-04:00",
+      "qpu": {
+        "curbsidePickupLink": null,
+        "holdPolicy": {
+          "regularHoldInDays": 3,
+          "specialHoldDates": [
+            {
+              "readyForPickupStartDate": "2026-12-24",
+              "specialHoldInDays": 4
+            },
+            {
+              "readyForPickupStartDate": "2026-12-23",
+              "specialHoldInDays": 4
+            },
+            {
+              "readyForPickupStartDate": "2026-12-22",
+              "specialHoldInDays": 4
+            }
+          ]
+        },
+        "pickupOptions": [
+          "IN_STORE_PICKUP"
+        ]
+      },
+      "city": "Toronto",
+      "description": null,
+      "format": "BBY Express Stores",
+      "line1": null,
+      "line2": null,
+      "locationId": "197",
+      "name": "Best Buy Express Eaton Centre Queen",
+      "neighborhood": null,
+      "postalCode": "M5B 2H1",
+      "region": "ON",
+      "type": "SmallFormat",
+      "utcOffset": "UTC-04:00"
+    },
+    {
+      "address1": "65 Dundas St. W",
+      "address2": null,
+      "country": "CAN",
+      "landmark": "Toronto Eaton Centre",
+      "phone1": "(416) 642-8321",
+      "phone2": "(416) 642-8325",
+      "phone3": "",
+      "services": [
+        {
+          "serviceCode": "Service1",
+          "serviceName": "Geek Squad",
+          "serviceImageUri": ""
+        },
+        {
+          "serviceCode": "Service2",
+          "serviceName": "Best Buy Mobile",
+          "serviceImageUri": ""
+        },
+        {
+          "serviceCode": "Service7",
+          "serviceName": "Battery Recycling",
+          "serviceImageUri": ""
+        },
+        {
+          "serviceCode": "Service8",
+          "serviceName": "Small Electronics Recycling",
+          "serviceImageUri": ""
+        },
+        {
+          "serviceCode": "Service9",
+          "serviceName": "General Electronics Drop Off",
+          "serviceImageUri": ""
+        }
+      ],
+      "statHolidayMessage": "",
+      "lat": 43.65586,
+      "lng": -79.383,
+      "hours": [
+        "Monday   10 AM - 9 PM",
+        "Tuesday   10 AM - 9 PM",
+        "Wednesday   10 AM - 9 PM",
+        "Thursday   10 AM - 9 PM",
+        "Friday   10 AM - 9 PM",
+        "Saturday   10 AM - 9 PM",
+        "Sunday   11 AM - 7 PM"
+      ],
+      "warehouseId": "1006",
+      "distance": 1.53,
+      "productsAvailability": [],
+      "message": "",
+      "message2": "",
+      "message3": "Best Buy is Canada's fastest-growing specialty retailer and e-tailer of home theater, electronics, computers, and entertainment products with Geek Squad providing 24 hour support.",
+      "timeZone": "UTC-04:00",
+      "qpu": {
+        "curbsidePickupLink": null,
+        "holdPolicy": {
+          "regularHoldInDays": 3,
+          "specialHoldDates": [
+            {
+              "readyForPickupStartDate": "2026-12-24",
+              "specialHoldInDays": 4
+            },
+            {
+              "readyForPickupStartDate": "2026-12-23",
+              "specialHoldInDays": 4
+            },
+            {
+              "readyForPickupStartDate": "2026-12-22",
+              "specialHoldInDays": 4
+            }
+          ]
+        },
+        "pickupOptions": [
+          "IN_STORE_PICKUP"
+        ]
+      },
+      "city": "Toronto",
+      "description": null,
+      "format": "Regular Store",
+      "line1": null,
+      "line2": null,
+      "locationId": "977",
+      "name": "Bay & Dundas",
+      "neighborhood": null,
+      "postalCode": "M5G 2C3",
+      "region": "ON",
+      "type": "BigBox",
+      "utcOffset": "UTC-04:00"
+    },
+    {
+      "address1": "20 Bloor Street East",
+      "address2": null,
+      "country": "CAN",
+      "landmark": "Hudson Bay Centre",
+      "phone1": "416-921-2748",
+      "phone2": "",
+      "phone3": "",
+      "services": [
+        {
+          "serviceCode": "Service2",
+          "serviceName": "Best Buy Mobile",
+          "serviceImageUri": ""
+        }
+      ],
+      "statHolidayMessage": "",
+      "lat": 43.671148,
+      "lng": -79.385576,
+      "hours": [
+        "Monday   10 AM - 7 PM",
+        "Tuesday   10 AM - 7 PM",
+        "Wednesday   10 AM - 7 PM",
+        "Thursday   10 AM - 7 PM",
+        "Friday   10 AM - 7 PM",
+        "Saturday   10 AM - 6 PM",
+        "Sunday   11 AM - 6 PM"
+      ],
+      "warehouseId": "-1",
+      "distance": 3.22,
+      "productsAvailability": [],
+      "message": "",
+      "message2": "",
+      "message3": "",
+      "timeZone": "UTC-04:00",
+      "qpu": {
+        "curbsidePickupLink": null,
+        "holdPolicy": {
+          "regularHoldInDays": 3,
+          "specialHoldDates": [
+            {
+              "readyForPickupStartDate": "2026-12-24",
+              "specialHoldInDays": 4
+            },
+            {
+              "readyForPickupStartDate": "2026-12-23",
+              "specialHoldInDays": 4
+            },
+            {
+              "readyForPickupStartDate": "2026-12-22",
+              "specialHoldInDays": 4
+            }
+          ]
+        },
+        "pickupOptions": [
+          "IN_STORE_PICKUP"
+        ]
+      },
+      "city": "Toronto",
+      "description": null,
+      "format": "BBY Express Stores",
+      "line1": null,
+      "line2": null,
+      "locationId": "193",
+      "name": "Best Buy Express Hudson Bay Centre",
+      "neighborhood": null,
+      "postalCode": "M4W 3G7",
+      "region": "ON",
+      "type": "SmallFormat",
+      "utcOffset": "UTC-04:00"
+    }
+  ]
+}

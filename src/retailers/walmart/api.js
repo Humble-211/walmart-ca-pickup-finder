@@ -1,8 +1,8 @@
 // Talks to walmart.ca internal GraphQL persisted queries. Must run inside a
 // walmart.ca page so cookies and the PerimeterX clearance are sent.
 // Endpoint details: docs/walmart-ca-endpoints.md
-import { parseStores, parseItem } from "../lib/parse-walmart.js";
-import { WalmartApiError, apiChanged } from "../lib/errors.js";
+import { parseStores, parseItem } from "./parse.js";
+import { WalmartApiError, apiChanged } from "../../lib/errors.js";
 
 const ORIGIN = "https://www.walmart.ca";
 const NEARBY_HASH = "d26e41479a06dc27775a042b88b74ea8b5b75d3a670bcafd080eb7a4e2bdf66f";

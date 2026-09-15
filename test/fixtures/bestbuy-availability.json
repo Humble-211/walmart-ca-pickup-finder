@@ -1,0 +1,110 @@
+{
+  "availabilities": [
+    {
+      "isGiftCard": false,
+      "isService": false,
+      "pickup": {
+        "locations": [
+          {
+            "fulfillmentKey": "506",
+            "fulfillmentPartnerId": null,
+            "hasInventory": true,
+            "id": null,
+            "isReservable": true,
+            "locationKey": "927",
+            "name": "Downsview",
+            "price": null,
+            "quantityOnHand": 22,
+            "reservable": true,
+            "supportsFulfillment": true
+          },
+          {
+            "fulfillmentKey": "506",
+            "fulfillmentPartnerId": null,
+            "hasInventory": false,
+            "id": null,
+            "isReservable": false,
+            "locationKey": "196",
+            "name": "Best Buy Express Yorkdale SC",
+            "price": null,
+            "quantityOnHand": 0,
+            "reservable": false,
+            "supportsFulfillment": true
+          },
+          {
+            "fulfillmentKey": "506",
+            "fulfillmentPartnerId": null,
+            "hasInventory": false,
+            "id": null,
+            "isReservable": false,
+            "locationKey": "163",
+            "name": "Best Buy Express Albion",
+            "price": null,
+            "quantityOnHand": 0,
+            "reservable": false,
+            "supportsFulfillment": true
+          },
+          {
+            "fulfillmentKey": "506",
+            "fulfillmentPartnerId": null,
+            "hasInventory": false,
+            "id": null,
+            "isReservable": false,
+            "locationKey": "932",
+            "name": "Woodbridge",
+            "price": null,
+            "quantityOnHand": 0,
+            "reservable": false,
+            "supportsFulfillment": true
+          },
+          {
+            "fulfillmentKey": "506",
+            "fulfillmentPartnerId": null,
+            "hasInventory": true,
+            "id": null,
+            "isReservable": true,
+            "locationKey": "617",
+            "name": "Keele & St. Clair",
+            "price": null,
+            "quantityOnHand": 2,
+            "reservable": true,
+            "supportsFulfillment": true
+          }
+        ],
+        "purchasable": true,
+        "status": "InStock"
+      },
+      "saleChannelExclusivity": "InStoreAndOnline",
+      "scheduledDelivery": false,
+      "sellerId": "bbyca",
+      "shipping": {
+        "backorderable": false,
+        "countdownIsZone": false,
+        "freeShippingEligible": false,
+        "hasActiveCountdown": true,
+        "isBackorderable": false,
+        "isFreeShippingEligible": false,
+        "levelsOfServices": [
+          {
+            "carrierId": "MTRO",
+            "carrierName": "Metro",
+            "deliveryDate": "2026-09-16T23:59:00Z",
+            "deliveryDateExpiresOn": "2026-09-16T13:57:00Z",
+            "deliveryDatePrecision": "1.00:00:00",
+            "id": "SOP_506-925_0_0_MTRO-E24_FS-SC_LC0_REG-ALL",
+            "name": "e24",
+            "price": 8.99
+          }
+        ],
+        "orderLimit": 1,
+        "preorderInfo": null,
+        "purchasable": true,
+        "quantityRemaining": 1394,
+        "restrictedZoneRegions": [],
+        "scheduledDelivery": false,
+        "status": "InStock"
+      },
+      "sku": "19446111"
+    }
+  ]
+}

@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { parseItemId } from "../src/lib/parse-item-id.js";
+import { parseItemId } from "../src/retailers/walmart/urls.js";
 
 describe("parseItemId", () => {
   it("accepts a bare numeric id", () => {

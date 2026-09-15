@@ -1,4 +1,4 @@
-import { WalmartApiError, apiChanged } from "./errors.js";
+import { WalmartApiError, apiChanged } from "../../lib/errors.js";
 
 const STATUS = { IN_STOCK: "available", OUT_OF_STOCK: "out_of_stock" };
 
@@ -35,6 +35,7 @@ export function parseStores(json) {
       distanceKm: Number.isFinite(d) ? d : null,
       status: STATUS[n?.product?.availabilityStatus] ?? "unknown",
       accessPointId: pickAccessPointId(n?.capabilities),
+      url: null, // walmart rows use setPickup, not a per-store URL
     };
   });
 }
@@ -51,6 +52,7 @@ export function parseItem(json) {
   const path = typeof p.canonicalUrl === "string" && /^\/(?!\/)/.test(p.canonicalUrl) ? p.canonicalUrl : `/en/ip/${id}`;
   return {
     id,
+    retailer: "walmart",
     name: String(p.name),
     priceString: String(p.priceInfo?.currentPrice?.priceString ?? ""),
     imageUrl: p.imageInfo?.thumbnailUrl ? String(p.imageInfo.thumbnailUrl) : null,
