@@ -1,1 +1,49 @@
-<!doctype html><title>Walmart.ca Pickup Finder</title>
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Walmart.ca Pickup Finder</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <form id="form" autocomplete="off">
+    <label>Item ID or product URL
+      <input id="item" type="text" placeholder="6000208927194 or https://www.walmart.ca/en/ip/..." required>
+    </label>
+    <label>Postal code
+      <input id="postal" type="text" placeholder="M5V 3L9" maxlength="7" required>
+    </label>
+    <button id="submit" type="submit">Find pickup stores</button>
+  </form>
+
+  <p id="error" class="error" hidden></p>
+  <p id="status" class="status" hidden></p>
+
+  <section id="itemCard" class="item" hidden>
+    <img id="itemImage" alt="">
+    <div>
+      <a id="itemName" target="_blank" rel="noopener"></a>
+      <div id="itemPrice" class="price"></div>
+      <div id="itemNotice" class="notice" hidden>This item is not offered for pickup.</div>
+    </div>
+  </section>
+
+  <ol id="stores" class="stores"></ol>
+
+  <template id="storeRow">
+    <li class="store">
+      <div class="store-main">
+        <div class="store-name"></div>
+        <div class="store-address"></div>
+      </div>
+      <div class="store-side">
+        <span class="badge"></span>
+        <span class="distance"></span>
+        <button class="pickup" type="button">Order pickup</button>
+      </div>
+    </li>
+  </template>
+
+  <script src="popup.js"></script>
+</body>
+</html>

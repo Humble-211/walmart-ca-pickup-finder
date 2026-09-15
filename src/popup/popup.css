@@ -1,0 +1,25 @@
+:root { color-scheme: light; font: 13px/1.4 system-ui, sans-serif; }
+body { width: 380px; margin: 0; padding: 12px; background: #fff; color: #111; }
+form { display: grid; gap: 8px; }
+label { display: grid; gap: 3px; font-weight: 600; }
+input { font: inherit; padding: 6px 8px; border: 1px solid #bbb; border-radius: 4px; }
+button { font: inherit; padding: 7px 10px; border: 0; border-radius: 4px; background: #0071dc; color: #fff; cursor: pointer; }
+button:disabled { background: #9bbbe0; cursor: default; }
+.error { color: #b00020; margin: 10px 0 0; white-space: pre-wrap; }
+.status { color: #555; margin: 10px 0 0; }
+.item { display: flex; gap: 10px; margin-top: 12px; padding: 8px; border: 1px solid #ddd; border-radius: 6px; }
+.item img { width: 56px; height: 56px; object-fit: contain; }
+.item a { font-weight: 600; color: #111; text-decoration: none; }
+.price { color: #2a8a2a; font-weight: 600; }
+.notice { color: #b00020; margin-top: 4px; }
+.stores { list-style: none; margin: 10px 0 0; padding: 0; display: grid; gap: 6px; }
+.store { display: flex; justify-content: space-between; gap: 8px; padding: 8px; border: 1px solid #ddd; border-radius: 6px; }
+.store-name { font-weight: 600; }
+.store-address { color: #555; }
+.store-side { display: grid; gap: 4px; justify-items: end; align-content: start; min-width: 96px; }
+.badge { padding: 1px 6px; border-radius: 10px; font-size: 12px; font-weight: 600; }
+.badge.available { background: #dff5e1; color: #1b6e2a; }
+.badge.out_of_stock { background: #fde3e3; color: #a11; }
+.badge.unknown { background: #eee; color: #555; }
+.distance { color: #555; font-size: 12px; }
+.pickup { padding: 4px 8px; font-size: 12px; }
