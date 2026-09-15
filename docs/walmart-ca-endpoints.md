@@ -59,7 +59,7 @@ Variables (all top-level booleans are `Boolean!` and must be present):
 ```
 
 Notes:
-- `productId` is the numeric ID from the product URL (`/en/ip/<slug>/<id>`).
+- `productId` is the item ID from the product URL (`/en/ip/<slug>/<id>` or `/ip/<id>`). Two forms exist and both are accepted here and by ItemById: numeric `6000208927194` and 12-character alphanumeric `1SZQHN3LOSE0` (verified 2026-09-15 with the PS5 Pro console, which has no numeric ID).
 - `checkItemAvailability: true` adds `product { availabilityStatus }` per node
   and removes `geoPoint` (query text: `geoPoint @skip(if:$checkItemAvailability)`).
 - `maxCount` verified up to 25. Without `productId`/`maxCount` the call returns 50 stores, no availability.
@@ -117,7 +117,9 @@ data.product.pickupOption.availabilityStatus  "AVAILABLE" | null  (null = item n
 data.product.availableFulfillmentOptions   e.g. ["SCHEDULED_PICKUP","UNSCHEDULED_PICKUP",...]
 ```
 
-Unknown item ID: `data.product` null -> user-facing "Item not found".
+Unknown item ID: HTTP 200 with a `data.product` object whose `name` and `usItemId`
+are `""` and `id`/`canonicalUrl` are null (an empty shell, not `null`) -> user-facing
+"Item not found". `parseItem` also treats a literal `null` product the same way.
 
 ## 3. Select a pickup store (for the "Order pickup" button)
 

@@ -4,6 +4,10 @@ Chrome extension. Enter a walmart.ca item ID (or paste the product URL) and a
 Canadian postal code; get the nearest Walmart stores with that item's pickup
 stock status, and open the product page with a store selected.
 
+Item IDs come in two forms, both accepted: numeric (`6000208927194`) and
+12-character alphanumeric (`1SZQHN3LOSE0`). Both appear at the end of the
+product URL (`/en/ip/<slug>/<id>` or `/ip/<id>`).
+
 ## Build and load
 
 ```sh
