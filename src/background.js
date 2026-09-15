@@ -45,6 +45,7 @@ async function forward(msg) {
 async function handle(msg) {
   switch (msg?.type) {
     case "lookup":
+    case "findInStock":
       return forward(msg);
     case "selectStore": {
       const res = await forward(msg);
@@ -60,7 +61,7 @@ async function handle(msg) {
 }
 
 chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
-  if (sender.tab) return false; // only the popup talks to the background
+  if (!sender.url?.startsWith(chrome.runtime.getURL("/"))) return false; // only extension pages (the popup) talk to the background
   handle(msg).then(sendResponse, (err) => sendResponse({ ok: false, code: "unknown", error: String(err?.message ?? err) }));
   return true;
 });

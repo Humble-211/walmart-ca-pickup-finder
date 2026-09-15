@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { readFileSync } from "node:fs";
 import {
   buildHeaders, buildNearByNodesUrl, buildItemUrl, buildSetPickupBody,
-  getItem, findStores, selectStore,
+  getItem, findStores, findStoresAround, selectStore,
 } from "../src/content/walmart-api.js";
 
 const nearBy = readFileSync(new URL("./fixtures/nearByNodes.json", import.meta.url), "utf8");
@@ -40,6 +40,13 @@ describe("request builders", () => {
       "enableWICStoreSelector", "enableSparkStore"]) {
       expect(v[k]).toBe(false);
     }
+  });
+
+  it("buildNearByNodesUrl with a point sends lat/lon/radius and no postal code", () => {
+    const url = new URL(buildNearByNodesUrl(null, "1SZQHN3LOSE0", 50, { lat: 43.64, lon: -79.39, radiusKm: 100 }));
+    const v = JSON.parse(url.searchParams.get("variables"));
+    expect(v.input).toMatchObject({ postalCode: null, latitude: 43.64, longitude: -79.39, radius: 100, productId: "1SZQHN3LOSE0", maxCount: 50 });
+    expect(v.checkItemAvailability).toBe(true);
   });
 
   it("buildItemUrl targets the ItemById hash and sets iId", () => {
@@ -83,6 +90,19 @@ describe("fetching", () => {
     expect(init.credentials).toBe("include");
     expect(init.method ?? "GET").toBe("GET");
     expect(init.headers["x-apollo-operation-name"]).toBe("nearByNodes");
+  });
+
+  it("findStoresAround queries by point for the 50 nearest stores within 100 km", async () => {
+    fetchMock.mockResolvedValue(jsonResponse(nearBy));
+    const stores = await findStoresAround(45.5, -73.6, "1SZQHN3LOSE0");
+    expect(stores).toHaveLength(5);
+    const v = JSON.parse(new URL(fetchMock.mock.calls[0][0]).searchParams.get("variables"));
+    expect(v.input).toMatchObject({ postalCode: null, latitude: 45.5, longitude: -73.6, radius: 100, maxCount: 50 });
+  });
+
+  it("maps HTTP 429 to rate_limited", async () => {
+    fetchMock.mockResolvedValue(new Response("", { status: 429 }));
+    await expect(findStores("M1P 4P5", "1")).rejects.toMatchObject({ code: "rate_limited" });
   });
 
   it("getItem parses the item", async () => {

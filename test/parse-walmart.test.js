@@ -7,6 +7,9 @@ const nearBy = JSON.parse(readFileSync(new URL("./fixtures/nearByNodes.json", im
 const item = JSON.parse(readFileSync(new URL("./fixtures/itemById.json", import.meta.url), "utf8"));
 
 describe("parseStores", () => {
+  it("returns an empty list when walmart reports no pickup node near the point", () => {
+    expect(parseStores({ data: { nearByNodes: null }, errors: [{ message: "SERVICE_UNAVAILABLE", extensions: { code: "400.204" } }] })).toEqual([]);
+  });
   it("maps every node in the fixture", () => {
     const stores = parseStores(nearBy);
     expect(stores).toHaveLength(5);

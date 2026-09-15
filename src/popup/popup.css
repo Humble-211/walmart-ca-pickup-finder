@@ -23,3 +23,10 @@ button:disabled { background: #9bbbe0; cursor: default; }
 .badge.unknown { background: #eee; color: #555; }
 .distance { color: #555; font-size: 12px; }
 .pickup { padding: 4px 8px; font-size: 12px; }
+h2 { font-size: 13px; margin: 14px 0 0; }
+.nearest { margin-top: 12px; padding: 8px; border: 1px solid #1b6e2a; border-radius: 6px; background: #f3fbf4; }
+.nearest h2 { margin: 0; }
+.nearest .stores { margin-top: 6px; }
+.note { color: #555; margin: 6px 0 0; }
+.secondary { margin-top: 8px; background: #eee; color: #111; }
+.secondary:disabled { background: #f4f4f4; color: #999; }

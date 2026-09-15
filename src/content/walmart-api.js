@@ -30,13 +30,15 @@ export function buildHeaders(opName) {
   };
 }
 
-export function buildNearByNodesUrl(postalCode, itemId, maxCount = 10) {
+// Either a postal code (geo = null) or a point: geo = {lat, lon, radiusKm}.
+// Walmart accepts maxCount 5..50 and radius 1..100 km; a point overrides the postal code.
+export function buildNearByNodesUrl(postalCode, itemId, maxCount = 10, geo = null) {
   const variables = {
     input: {
-      postalCode,
+      postalCode: geo ? null : postalCode,
       accessTypes: ["PICKUP_INSTORE", "PICKUP_CURBSIDE"],
       nodeTypes: ["STORE", "PICKUP_SPOKE", "PICKUP_POPUP"],
-      latitude: null, longitude: null, radius: null,
+      latitude: geo?.lat ?? null, longitude: geo?.lon ?? null, radius: geo?.radiusKm ?? null,
       productId: String(itemId),
       maxCount,
     },
@@ -86,6 +88,7 @@ async function gql(url, opName, init = {}) {
   if (res.status === 403 || res.status === 412 || /text\/html/i.test(contentType) || /^\s*</.test(text)) {
     throw new WalmartApiError("verification");
   }
+  if (res.status === 429) throw new WalmartApiError("rate_limited");
   let json;
   try { json = JSON.parse(text); } catch { throw apiChanged(text); }
   if (!res.ok) throw apiChanged(text);
@@ -98,6 +101,11 @@ export async function getItem(itemId) {
 
 export async function findStores(postalCode, itemId, maxCount = 10) {
   return parseStores(await gql(buildNearByNodesUrl(postalCode, itemId, maxCount), "nearByNodes"));
+}
+
+// The maxCount stores nearest a point within radiusKm (walmart caps radius at 100), with availability.
+export async function findStoresAround(lat, lon, itemId, radiusKm = 100, maxCount = 50) {
+  return parseStores(await gql(buildNearByNodesUrl(null, itemId, maxCount, { lat, lon, radiusKm }), "nearByNodes"));
 }
 
 export async function selectStore(store, postalCode) {

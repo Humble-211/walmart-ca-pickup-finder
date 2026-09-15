@@ -95,6 +95,30 @@ Price is per item, not per store (the availability call does not return price).
    `accessPointId`), then background opens `itemUrl` in a new tab. The page
    loads with that store selected.
 
+5. Nearest in stock (added 2026-09-15). `nearByNodes` only ever returns the
+   50 stores nearest a point (100 km max radius), so for a scarce item every
+   nearby store can be out of stock while a store 300 km away has it. After
+   step 3 the popup sends `{type:"findInStock", itemId, nearby, checkedIds}`.
+   The content script estimates the user's position from the nearby stores'
+   reported distances (`lib/geo.js` `locateUser`, least squares against
+   `lib/stores-ca.json`, a generated list of Canadian Walmart stores with
+   coordinates), then `lib/stock-search.js` probes outward: each probe is a
+   `nearByNodes` call by lat/lon (radius 100 km, the maximum; 50 stores). The
+   probe centre is chosen among the nearest unchecked stores and the centroids
+   of the unchecked stores around them, preferring one whose simulated response
+   includes the nearest unchecked store (nearest-first) and holds the most
+   unchecked stores. It stops when the nearest in-stock store is provably found,
+   the catalog is exhausted, or the budget (10 calls, 1 s apart; walmart
+   rate-limits at ~25 calls per several minutes, with growing penalties) is
+   spent. Because one call reaches at most 100 km, covering all of Canada takes
+   ~57 calls, i.e. several "Keep searching farther" rounds with waits in between;
+   one round covers roughly the nearest 30-140 stores depending on density.
+   Progress is streamed to the popup as `searchProgress` messages. The popup
+   shows the closest in-stock stores in a "Nearest in stock" box with a "Keep
+   searching farther" button that continues from `checkedIds`.
+   `tools/build-store-list.mjs` (API) and `tools/build-store-list-pages.mjs`
+   (store pages, not rate-limited) regenerate the store list.
+
 Endpoint details, headers, hashes and variable templates: `docs/walmart-ca-endpoints.md`.
 
 ## Error handling

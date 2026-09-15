@@ -4,6 +4,7 @@ export const ERROR_MESSAGES = {
   invalid_postal: "Postal code not recognized by Walmart.",
   not_found: "Item not found.",
   api_changed: "Walmart changed its API",
+  rate_limited: "walmart.ca is rate-limiting requests. Wait a minute or two and try again.",
   unknown: "Something went wrong.",
 };
 

@@ -22,6 +22,7 @@ function formatAddress(a) {
 // Raw nearByNodes JSON -> Store[]
 export function parseStores(json) {
   if (hasGraphqlError(json, "INVALID_POSTAL_CODE")) throw new WalmartApiError("invalid_postal");
+  if (json?.data?.nearByNodes == null && hasGraphqlError(json, "SERVICE_UNAVAILABLE")) return []; // no pickup node near that point
   const nodes = json?.data?.nearByNodes?.nodes;
   if (!Array.isArray(nodes)) throw apiChanged(JSON.stringify(json));
   return nodes.map((n) => {
