@@ -1,0 +1,13 @@
+{
+  "manifest_version": 3,
+  "name": "Walmart.ca Pickup Finder",
+  "version": "0.1.0",
+  "description": "Find nearby Walmart Canada stores that have an item in stock for pickup.",
+  "permissions": ["storage", "tabs"],
+  "host_permissions": ["https://www.walmart.ca/*"],
+  "background": { "service_worker": "background.js" },
+  "action": { "default_popup": "popup/popup.html", "default_title": "Walmart.ca Pickup Finder" },
+  "content_scripts": [
+    { "matches": ["https://www.walmart.ca/*"], "js": ["content.js"], "run_at": "document_idle" }
+  ]
+}
