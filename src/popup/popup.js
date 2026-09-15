@@ -137,11 +137,12 @@ async function searchInStock() {
   showStatus("Searching farther stores…");
   try {
     const res = await chrome.runtime.sendMessage({
-      type: "findInStock", retailer: state.retailer, itemId: state.itemId, nearby: state.nearby, checkedIds: state.checkedIds,
-      itemUrl: state.item.url,
+      type: "findInStock", retailer: state.retailer, itemId: state.itemId, postalCode: state.postalCode, nearby: state.nearby,
+      checkedIds: state.checkedIds, itemUrl: state.item.url,
     });
     showStatus("");
     if (!res?.ok) { showApiError(res?.error, state.retailer, "Search failed."); return; }
+    if (res.noLocation && !state.nearby.length) { renderStores([]); return; } // nothing nearby to locate the user from: keep the "no store near that postal code" message
     mergeInStock(res.inStock ?? []);
     state.checkedIds = res.checkedIds ?? state.checkedIds;
     renderNearest(res);
@@ -170,8 +171,11 @@ async function lookup({ retailer, itemId }, postalCode) {
     showStatus("");
     renderItem(res.item);
     renderStores(res.stores);
-    // Only worth searching when walmart reports pickup availability for this item at all.
-    if (res.stores.some((s) => s.status !== "unknown")) await searchInStock();
+    // Worth searching when the retailer reports pickup availability for this item at all, or when
+    // no store at all is within its nearby radius (a remote postal code): adapters that can place
+    // the user without nearby stores (Shoppers) then search outward; the others answer noLocation.
+    const known = res.stores.some((s) => s.status !== "unknown");
+    if (known || (!res.stores.length && res.item?.pickupEligible !== false)) await searchInStock();
   } catch (err) {
     showStatus("");
     showError(String(err?.message ?? err));
