@@ -1,0 +1,581 @@
+{
+  "id": "SDM_625273036947",
+  "count": 10,
+  "storeInventory": [
+    {
+      "quantity": 3,
+      "store": {
+        "storeId": "1321",
+        "storeAddress": {
+          "id": "1321",
+          "name": "Shoppers Drug Mart Queen's Quay",
+          "line1": "390 QUEEN'S QUAY WEST",
+          "town": "TORONTO",
+          "postalCode": "M5V 3A6",
+          "province": "ON",
+          "phone": "416-260-2766"
+        },
+        "distance": 0.46,
+        "url": "/api/v1/stores/1321",
+        "longitude": -79.3904,
+        "latitude": 43.6383,
+        "storeTimes": [
+          {
+            "openHour": "08:00",
+            "closeHour": "24:00",
+            "dayOfWeek": "Monday"
+          },
+          {
+            "openHour": "08:00",
+            "closeHour": "24:00",
+            "dayOfWeek": "Tuesday"
+          },
+          {
+            "openHour": "08:00",
+            "closeHour": "24:00",
+            "dayOfWeek": "Wednesday"
+          },
+          {
+            "openHour": "08:00",
+            "closeHour": "24:00",
+            "dayOfWeek": "Thursday"
+          },
+          {
+            "openHour": "08:00",
+            "closeHour": "24:00",
+            "dayOfWeek": "Friday"
+          },
+          {
+            "openHour": "08:00",
+            "closeHour": "24:00",
+            "dayOfWeek": "Saturday"
+          },
+          {
+            "openHour": "08:00",
+            "closeHour": "24:00",
+            "dayOfWeek": "Sunday"
+          }
+        ]
+      },
+      "bopisIneligible": false
+    },
+    {
+      "quantity": 0,
+      "store": {
+        "storeId": "1320",
+        "storeAddress": {
+          "id": "1320",
+          "name": "Shoppers Drug Mart King & Peter",
+          "line1": "388 KING STREET WEST",
+          "town": "TORONTO",
+          "postalCode": "M5V 1K2",
+          "province": "ON",
+          "phone": "416-597-6550"
+        },
+        "distance": 0.67,
+        "url": "/api/v1/stores/1320",
+        "longitude": -79.392553,
+        "latitude": 43.646115,
+        "storeTimes": [
+          {
+            "openHour": "08:00",
+            "closeHour": "24:00",
+            "dayOfWeek": "Monday"
+          },
+          {
+            "openHour": "08:00",
+            "closeHour": "24:00",
+            "dayOfWeek": "Tuesday"
+          },
+          {
+            "openHour": "08:00",
+            "closeHour": "24:00",
+            "dayOfWeek": "Wednesday"
+          },
+          {
+            "openHour": "08:00",
+            "closeHour": "24:00",
+            "dayOfWeek": "Thursday"
+          },
+          {
+            "openHour": "08:00",
+            "closeHour": "24:00",
+            "dayOfWeek": "Friday"
+          },
+          {
+            "openHour": "08:00",
+            "closeHour": "24:00",
+            "dayOfWeek": "Saturday"
+          },
+          {
+            "openHour": "08:00",
+            "closeHour": "24:00",
+            "dayOfWeek": "Sunday"
+          }
+        ]
+      },
+      "bopisIneligible": false
+    },
+    {
+      "quantity": 7,
+      "store": {
+        "storeId": "0985",
+        "storeAddress": {
+          "id": "0985",
+          "name": "Shoppers Drug Mart Royal Bank Plaza",
+          "line1": "200 BAY ST",
+          "town": "TORONTO",
+          "postalCode": "M5J 2J3",
+          "province": "ON",
+          "phone": "416-865-0001"
+        },
+        "distance": 0.76,
+        "url": "/api/v1/stores/0985",
+        "longitude": -79.37988,
+        "latitude": 43.646086,
+        "storeTimes": [
+          {
+            "openHour": "07:00",
+            "closeHour": "18:30",
+            "dayOfWeek": "Monday"
+          },
+          {
+            "openHour": "07:00",
+            "closeHour": "18:30",
+            "dayOfWeek": "Tuesday"
+          },
+          {
+            "openHour": "07:00",
+            "closeHour": "18:30",
+            "dayOfWeek": "Wednesday"
+          },
+          {
+            "openHour": "07:00",
+            "closeHour": "18:30",
+            "dayOfWeek": "Thursday"
+          },
+          {
+            "openHour": "07:00",
+            "closeHour": "18:30",
+            "dayOfWeek": "Friday"
+          },
+          {
+            "openHour": "10:00",
+            "closeHour": "16:30",
+            "dayOfWeek": "Saturday"
+          },
+          {
+            "openHour": "00:00",
+            "closeHour": "00:00",
+            "dayOfWeek": "Sunday",
+            "holiday": ""
+          }
+        ]
+      },
+      "bopisIneligible": true
+    },
+    {
+      "quantity": 5,
+      "store": {
+        "storeId": "0997",
+        "storeAddress": {
+          "id": "0997",
+          "name": "Shoppers Drug Mart Toronto Dominion Centre",
+          "line1": "66 WELLINGTON ST. W.",
+          "town": "TORONTO",
+          "postalCode": "M5K 1A1",
+          "province": "ON",
+          "phone": "416-365-0927"
+        },
+        "distance": 0.79,
+        "url": "/api/v1/stores/0997",
+        "longitude": -79.381118,
+        "latitude": 43.647234,
+        "storeTimes": [
+          {
+            "openHour": "07:00",
+            "closeHour": "18:30",
+            "dayOfWeek": "Monday"
+          },
+          {
+            "openHour": "07:00",
+            "closeHour": "18:30",
+            "dayOfWeek": "Tuesday"
+          },
+          {
+            "openHour": "07:00",
+            "closeHour": "18:30",
+            "dayOfWeek": "Wednesday"
+          },
+          {
+            "openHour": "07:00",
+            "closeHour": "18:30",
+            "dayOfWeek": "Thursday"
+          },
+          {
+            "openHour": "07:00",
+            "closeHour": "18:30",
+            "dayOfWeek": "Friday"
+          },
+          {
+            "openHour": "00:00",
+            "closeHour": "00:00",
+            "dayOfWeek": "Saturday",
+            "holiday": ""
+          },
+          {
+            "openHour": "00:00",
+            "closeHour": "00:00",
+            "dayOfWeek": "Sunday",
+            "holiday": ""
+          }
+        ]
+      },
+      "bopisIneligible": false
+    },
+    {
+      "quantity": 14,
+      "store": {
+        "storeId": "6035",
+        "storeAddress": {
+          "id": "6035",
+          "name": "Shoppers Drug Mart The Well",
+          "line1": "486 Front Street West",
+          "town": "TORONTO",
+          "postalCode": "M5V 0V2",
+          "province": "ON",
+          "phone": "416-205-9110"
+        },
+        "distance": 0.82,
+        "url": "/api/v1/stores/6035",
+        "longitude": -79.397197,
+        "latitude": 43.641849,
+        "storeTimes": [
+          {
+            "openHour": "08:00",
+            "closeHour": "22:00",
+            "dayOfWeek": "Monday"
+          },
+          {
+            "openHour": "08:00",
+            "closeHour": "22:00",
+            "dayOfWeek": "Tuesday"
+          },
+          {
+            "openHour": "08:00",
+            "closeHour": "22:00",
+            "dayOfWeek": "Wednesday"
+          },
+          {
+            "openHour": "08:00",
+            "closeHour": "22:00",
+            "dayOfWeek": "Thursday"
+          },
+          {
+            "openHour": "08:00",
+            "closeHour": "22:00",
+            "dayOfWeek": "Friday"
+          },
+          {
+            "openHour": "08:00",
+            "closeHour": "22:00",
+            "dayOfWeek": "Saturday"
+          },
+          {
+            "openHour": "08:00",
+            "closeHour": "22:00",
+            "dayOfWeek": "Sunday"
+          }
+        ]
+      },
+      "bopisIneligible": false
+    },
+    {
+      "quantity": 7,
+      "store": {
+        "storeId": "0945",
+        "storeAddress": {
+          "id": "0945",
+          "name": "Shoppers Drug Mart Brookfield Place",
+          "line1": "181 BAY ST",
+          "town": "TORONTO",
+          "postalCode": "M5J 2T3",
+          "province": "ON",
+          "phone": "416-777-1300"
+        },
+        "distance": 0.87,
+        "url": "/api/v1/stores/0945",
+        "longitude": -79.3792,
+        "latitude": 43.647,
+        "storeTimes": [
+          {
+            "openHour": "07:00",
+            "closeHour": "18:30",
+            "dayOfWeek": "Monday"
+          },
+          {
+            "openHour": "07:00",
+            "closeHour": "18:30",
+            "dayOfWeek": "Tuesday"
+          },
+          {
+            "openHour": "07:00",
+            "closeHour": "18:30",
+            "dayOfWeek": "Wednesday"
+          },
+          {
+            "openHour": "07:00",
+            "closeHour": "18:30",
+            "dayOfWeek": "Thursday"
+          },
+          {
+            "openHour": "07:00",
+            "closeHour": "18:30",
+            "dayOfWeek": "Friday"
+          },
+          {
+            "openHour": "00:00",
+            "closeHour": "00:00",
+            "dayOfWeek": "Saturday",
+            "holiday": ""
+          },
+          {
+            "openHour": "00:00",
+            "closeHour": "00:00",
+            "dayOfWeek": "Sunday",
+            "holiday": ""
+          }
+        ]
+      },
+      "bopisIneligible": true
+    },
+    {
+      "quantity": 0,
+      "store": {
+        "storeId": "1393",
+        "storeAddress": {
+          "id": "1393",
+          "name": "Shoppers Drug Mart King & Spadina",
+          "line1": "500 KING STREET WEST",
+          "town": "TORONTO",
+          "postalCode": "M5V 1L9",
+          "province": "ON",
+          "phone": "416-214-4724"
+        },
+        "distance": 0.89,
+        "url": "/api/v1/stores/1393",
+        "longitude": -79.396892,
+        "latitude": 43.645266,
+        "storeTimes": [
+          {
+            "openHour": "08:00",
+            "closeHour": "22:00",
+            "dayOfWeek": "Monday"
+          },
+          {
+            "openHour": "08:00",
+            "closeHour": "22:00",
+            "dayOfWeek": "Tuesday"
+          },
+          {
+            "openHour": "08:00",
+            "closeHour": "22:00",
+            "dayOfWeek": "Wednesday"
+          },
+          {
+            "openHour": "08:00",
+            "closeHour": "22:00",
+            "dayOfWeek": "Thursday"
+          },
+          {
+            "openHour": "08:00",
+            "closeHour": "22:00",
+            "dayOfWeek": "Friday"
+          },
+          {
+            "openHour": "08:00",
+            "closeHour": "22:00",
+            "dayOfWeek": "Saturday"
+          },
+          {
+            "openHour": "08:00",
+            "closeHour": "22:00",
+            "dayOfWeek": "Sunday"
+          }
+        ]
+      },
+      "bopisIneligible": true
+    },
+    {
+      "quantity": 4,
+      "store": {
+        "storeId": "1414",
+        "storeAddress": {
+          "id": "1414",
+          "name": "Shoppers Drug Mart Queen & Beverley",
+          "line1": "260 QUEEN STREET WEST",
+          "town": "TORONTO",
+          "postalCode": "M5V 1Z8",
+          "province": "ON",
+          "phone": "416-979-3903"
+        },
+        "distance": 1.02,
+        "url": "/api/v1/stores/1414",
+        "longitude": -79.391851,
+        "latitude": 43.650047,
+        "storeTimes": [
+          {
+            "openHour": "08:00",
+            "closeHour": "24:00",
+            "dayOfWeek": "Monday"
+          },
+          {
+            "openHour": "08:00",
+            "closeHour": "24:00",
+            "dayOfWeek": "Tuesday"
+          },
+          {
+            "openHour": "08:00",
+            "closeHour": "24:00",
+            "dayOfWeek": "Wednesday"
+          },
+          {
+            "openHour": "08:00",
+            "closeHour": "24:00",
+            "dayOfWeek": "Thursday"
+          },
+          {
+            "openHour": "08:00",
+            "closeHour": "24:00",
+            "dayOfWeek": "Friday"
+          },
+          {
+            "openHour": "08:00",
+            "closeHour": "24:00",
+            "dayOfWeek": "Saturday"
+          },
+          {
+            "openHour": "08:00",
+            "closeHour": "24:00",
+            "dayOfWeek": "Sunday"
+          }
+        ]
+      },
+      "bopisIneligible": false
+    },
+    {
+      "quantity": 0,
+      "store": {
+        "storeId": "1343",
+        "storeAddress": {
+          "id": "1343",
+          "name": "Shoppers Drug Mart Bathurst & Lake Shore",
+          "line1": "15A BATHURST STREET",
+          "town": "TORONTO",
+          "postalCode": "M5V 2V9",
+          "province": "ON",
+          "phone": "416-594-3535"
+        },
+        "distance": 1.11,
+        "url": "/api/v1/stores/1343",
+        "longitude": -79.399454,
+        "latitude": 43.637356,
+        "storeTimes": [
+          {
+            "openHour": "08:00",
+            "closeHour": "22:00",
+            "dayOfWeek": "Monday"
+          },
+          {
+            "openHour": "08:00",
+            "closeHour": "22:00",
+            "dayOfWeek": "Tuesday"
+          },
+          {
+            "openHour": "08:00",
+            "closeHour": "22:00",
+            "dayOfWeek": "Wednesday"
+          },
+          {
+            "openHour": "08:00",
+            "closeHour": "22:00",
+            "dayOfWeek": "Thursday"
+          },
+          {
+            "openHour": "08:00",
+            "closeHour": "22:00",
+            "dayOfWeek": "Friday"
+          },
+          {
+            "openHour": "08:00",
+            "closeHour": "22:00",
+            "dayOfWeek": "Saturday"
+          },
+          {
+            "openHour": "08:00",
+            "closeHour": "22:00",
+            "dayOfWeek": "Sunday"
+          }
+        ]
+      },
+      "bopisIneligible": false
+    },
+    {
+      "quantity": 4,
+      "store": {
+        "storeId": "0949",
+        "storeAddress": {
+          "id": "0949",
+          "name": "Shoppers Drug Mart Yonge & King",
+          "line1": "69 YONGE ST",
+          "town": "TORONTO",
+          "postalCode": "M5E 1K3",
+          "province": "ON",
+          "phone": "416-364-1948"
+        },
+        "distance": 1.12,
+        "url": "/api/v1/stores/0949",
+        "longitude": -79.3775,
+        "latitude": 43.649,
+        "storeTimes": [
+          {
+            "openHour": "08:00",
+            "closeHour": "20:00",
+            "dayOfWeek": "Monday"
+          },
+          {
+            "openHour": "08:00",
+            "closeHour": "20:00",
+            "dayOfWeek": "Tuesday"
+          },
+          {
+            "openHour": "08:00",
+            "closeHour": "20:00",
+            "dayOfWeek": "Wednesday"
+          },
+          {
+            "openHour": "08:00",
+            "closeHour": "20:00",
+            "dayOfWeek": "Thursday"
+          },
+          {
+            "openHour": "08:00",
+            "closeHour": "20:00",
+            "dayOfWeek": "Friday"
+          },
+          {
+            "openHour": "10:00",
+            "closeHour": "18:00",
+            "dayOfWeek": "Saturday"
+          },
+          {
+            "openHour": "11:00",
+            "closeHour": "18:00",
+            "dayOfWeek": "Sunday"
+          }
+        ]
+      },
+      "bopisIneligible": true
+    }
+  ]
+}

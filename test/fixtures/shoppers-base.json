@@ -1,0 +1,53 @@
+{
+  "breadCrumbs": [
+    {
+      "name": "Health",
+      "url": "/shop/categories/health/c/57127"
+    },
+    {
+      "name": "Vitamins & Supplements",
+      "url": "/shop/categories/health/vitamins-supplements/c/57140"
+    },
+    {
+      "name": "Mineral Supplements",
+      "url": "/shop/categories/health/vitamins-supplements/mineral-supplements/c/57215"
+    },
+    {
+      "name": "Other Minerals",
+      "url": "/shop/categories/health/vitamins-supplements/mineral-supplements/other-minerals/c/57509"
+    }
+  ],
+  "promotions": [
+    {
+      "code": "26ad0a8b-c6fc-41bf-b2bf-974cc481e018",
+      "couldFireMessages": [],
+      "enabled": true,
+      "endDate": "2026-09-18T03:59:59Z",
+      "firedMessages": [],
+      "giftOutOfStock": false,
+      "priority": 35,
+      "promoLabel": "",
+      "promotionType": "percentage_discount",
+      "restrictions": [
+        {
+          "restrictionType": "stackability"
+        }
+      ],
+      "startDate": "2026-09-12T04:00:00Z",
+      "title": "Sale"
+    }
+  ],
+  "variantsSummary": {
+    "hasModifaceFeature": false,
+    "variantOptions": [
+      {
+        "code": "625273036947",
+        "isOutOfStock": false,
+        "size": "120.0",
+        "unit": "Count"
+      }
+    ],
+    "variantProductType": "SIZE"
+  },
+  "infoCards": []
+}
