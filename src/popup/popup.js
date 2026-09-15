@@ -1,4 +1,4 @@
-import { parseItemId } from "../lib/parse-item-id.js";
+import { parseItemId } from "../retailers/walmart/urls.js";
 import { normalizePostalCode } from "../lib/postal-code.js";
 
 const $ = (id) => document.getElementById(id);

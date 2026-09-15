@@ -13,3 +13,9 @@ export function parseItemId(input) {
   const m = s.match(URL_ID);
   return m ? m[1].toUpperCase() : null;
 }
+export const id = "walmart";
+export const label = "Walmart";
+export const host = "www.walmart.ca";
+export const homeUrl = "https://www.walmart.ca/en";
+// Bare ids are accepted here (and only here): a bare id means walmart.
+export const parseProductUrl = parseItemId;
