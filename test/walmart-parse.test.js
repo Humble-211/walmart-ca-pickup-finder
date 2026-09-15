@@ -26,6 +26,7 @@ describe("parseStores", () => {
       distanceKm: 0.07,
       status: "available",
       accessPointId: "86de1e9c-5357-4500-83d1-f0535de6c4c2",
+      url: null,
     });
   });
 
@@ -73,6 +74,7 @@ describe("parseItem", () => {
   it("maps the fixture product", () => {
     expect(parseItem(item)).toEqual({
       id: "6000208927194",
+      retailer: "walmart",
       name: "Bounty Paper Towel 8 Rolls (16 Regular Rolls Equivalent)",
       priceString: "$21.98",
       imageUrl: "https://i5.walmartimages.ca/asr/b7d197af-6dfa-4e8d-9b0d-299d1f914c4d.06c9ddf4c33575f5cb67360e68ce52fd.jpeg",

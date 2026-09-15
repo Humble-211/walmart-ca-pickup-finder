@@ -1,11 +1,11 @@
-import { parseItemId } from "../retailers/walmart/urls.js";
+import { parseProductUrl, RETAILERS } from "../retailers/index.js";
 import { normalizePostalCode } from "../lib/postal-code.js";
 
 const $ = (id) => document.getElementById(id);
 const STATUS_LABEL = { available: "In stock", out_of_stock: "Out of stock", unknown: "Unknown" };
 const NEAREST_SHOWN = 3;
 
-const state = { item: null, postalCode: "", itemId: "", nearby: [], inStock: [], checkedIds: [], searching: false };
+const state = { item: null, postalCode: "", itemId: "", retailer: "", nearby: [], inStock: [], checkedIds: [], searching: false };
 
 function showError(msg) { $("error").textContent = msg; $("error").hidden = !msg; }
 function showStatus(msg) { $("status").textContent = msg; $("status").hidden = !msg; }
@@ -25,7 +25,7 @@ function renderItem(item) {
   $("itemCard").hidden = false;
   $("itemImage").src = item.imageUrl ?? "";
   $("itemImage").hidden = !item.imageUrl;
-  $("itemName").textContent = item.name;
+  $("itemName").textContent = `${RETAILERS[item.retailer]?.label ?? ""} · ${item.name}`.replace(/^ · /, "");
   $("itemName").href = item.url;
   $("itemPrice").textContent = item.priceString;
   $("itemNotice").hidden = item.pickupEligible;
@@ -40,8 +40,15 @@ function storeRow(s) {
   badge.classList.add(s.status);
   li.querySelector(".distance").textContent = s.distanceKm == null ? "" : `${s.distanceKm.toFixed(1)} km`;
   const btn = li.querySelector(".pickup");
-  btn.disabled = !s.accessPointId;
-  btn.addEventListener("click", () => orderPickup(s, btn));
+  if (state.retailer === "walmart") {
+    btn.textContent = "Order pickup";
+    btn.disabled = !s.accessPointId;
+    btn.addEventListener("click", () => orderPickup(s, btn));
+  } else {
+    btn.textContent = "Open product page";
+    btn.disabled = !s.url;
+    btn.addEventListener("click", () => chrome.tabs.create({ url: s.url }));
+  }
   return li;
 }
 
@@ -77,7 +84,7 @@ async function orderPickup(store, btn) {
   showStatus(`Selecting ${store.name}…`);
   try {
     const res = await chrome.runtime.sendMessage({
-      type: "selectStore", store, postalCode: state.postalCode, itemUrl: state.item.url,
+      type: "selectStore", retailer: state.retailer, store, postalCode: state.postalCode, itemUrl: state.item.url,
     });
     if (res?.ok) showStatus(`Opened product page with ${store.name} selected.`);
     else { showStatus(""); showError(`${res?.error ?? "Failed to select store."} The product page was opened; pick the store there.`); }
@@ -104,7 +111,7 @@ async function searchInStock() {
   showStatus("Searching farther stores…");
   try {
     const res = await chrome.runtime.sendMessage({
-      type: "findInStock", itemId: state.itemId, nearby: state.nearby, checkedIds: state.checkedIds,
+      type: "findInStock", retailer: state.retailer, itemId: state.itemId, nearby: state.nearby, checkedIds: state.checkedIds,
     });
     showStatus("");
     if (!res?.ok) { showError(res?.error ?? "Search failed."); return; }
@@ -120,16 +127,17 @@ async function searchInStock() {
   }
 }
 
-async function lookup(itemId, postalCode) {
+async function lookup({ retailer, itemId }, postalCode) {
   $("submit").disabled = true;
   showError("");
   showStatus("Looking up…");
   clearResults();
   try {
-    const res = await chrome.runtime.sendMessage({ type: "lookup", itemId, postalCode });
+    const res = await chrome.runtime.sendMessage({ type: "lookup", retailer, itemId, postalCode });
     if (!res?.ok) { showStatus(""); showError(res?.error ?? "Lookup failed."); return; }
     state.item = res.item;
     state.itemId = itemId;
+    state.retailer = retailer;
     state.postalCode = postalCode;
     state.nearby = res.stores;
     showStatus("");
@@ -147,13 +155,13 @@ async function lookup(itemId, postalCode) {
 
 $("form").addEventListener("submit", (ev) => {
   ev.preventDefault();
-  const itemId = parseItemId($("item").value);
-  if (!itemId) { clearResults(); showError("Enter a walmart.ca item ID or product URL."); return; }
+  const parsed = parseProductUrl($("item").value);
+  if (!parsed) { clearResults(); showError("Paste a product URL from Walmart, Best Buy, Staples, Shoppers Drug Mart or GameStop (or a Walmart item ID)."); return; }
   const postalCode = normalizePostalCode($("postal").value);
   if (!postalCode) { clearResults(); showError("Enter a valid Canadian postal code (e.g. M5V 3L9)."); return; }
   $("postal").value = postalCode;
   chrome.storage.local.set({ postalCode });
-  lookup(itemId, postalCode);
+  lookup(parsed, postalCode);
 });
 
 $("searchMore").addEventListener("click", searchInStock);
