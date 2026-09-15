@@ -101,6 +101,17 @@ describe("parseItem", () => {
     }
   });
 
+  it("throws not_found when the product shell has empty name and usItemId", () => {
+    const copy = structuredClone(item);
+    copy.data.product.name = "";
+    copy.data.product.usItemId = "";
+    copy.data.product.id = null;
+    copy.data.product.canonicalUrl = null;
+    try { parseItem(copy); throw new Error("no throw"); } catch (e) {
+      expect(e.code).toBe("not_found");
+    }
+  });
+
   it("throws api_changed when the shape is wrong", () => {
     try { parseItem({ foo: 1 }); throw new Error("no throw"); } catch (e) {
       expect(e.code).toBe("api_changed");

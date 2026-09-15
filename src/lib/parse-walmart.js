@@ -42,8 +42,8 @@ export function parseStores(json) {
 export function parseItem(json) {
   if (!json || typeof json !== "object" || !("data" in json)) throw apiChanged(JSON.stringify(json));
   const p = json.data?.product;
-  if (p === null) throw new WalmartApiError("not_found");
-  if (!p || typeof p !== "object" || !p.name) throw apiChanged(JSON.stringify(json));
+  if (p === null || (p && typeof p === "object" && !p.name && !p.usItemId)) throw new WalmartApiError("not_found");
+  if (!p || typeof p !== "object") throw apiChanged(JSON.stringify(json));
   const id = String(p.usItemId ?? p.id ?? "");
   return {
     id,

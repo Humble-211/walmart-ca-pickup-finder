@@ -43,12 +43,18 @@ async function orderPickup(store, btn) {
   btn.disabled = true;
   showError("");
   showStatus(`Selecting ${store.name}…`);
-  const res = await chrome.runtime.sendMessage({
-    type: "selectStore", store, postalCode: state.postalCode, itemUrl: state.item.url,
-  });
-  btn.disabled = false;
-  if (res?.ok) showStatus(`Opened product page with ${store.name} selected.`);
-  else { showStatus(""); showError(`${res?.error ?? "Failed to select store."} The product page was opened; pick the store there.`); }
+  try {
+    const res = await chrome.runtime.sendMessage({
+      type: "selectStore", store, postalCode: state.postalCode, itemUrl: state.item.url,
+    });
+    if (res?.ok) showStatus(`Opened product page with ${store.name} selected.`);
+    else { showStatus(""); showError(`${res?.error ?? "Failed to select store."} The product page was opened; pick the store there.`); }
+  } catch (err) {
+    showStatus("");
+    showError(String(err?.message ?? err));
+  } finally {
+    btn.disabled = false;
+  }
 }
 
 async function lookup(itemId, postalCode) {
