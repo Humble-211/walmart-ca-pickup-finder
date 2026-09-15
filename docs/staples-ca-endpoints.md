@@ -437,8 +437,32 @@ bestbuy's batched pass:
    code** (parsed from `store_address`). Mark all 5 returned stores as covered.
    Stop at the first `availableqty > 0`. Space calls ~1 s; report progress the
    way the bestbuy adapter does ("N checked, M to go").
-5. Cap the sweep (e.g. 40 calls ≈ 200 stores ≈ 40 s) and offer a "keep
-   searching" affordance rather than always running all 116.
+5. Cap the sweep (measured: 40 calls ≈ 140 stores ≈ 40 s; a full sweep is
+   ~112 calls, ~3 rounds of 40) and offer a "keep searching" affordance
+   rather than always running all 116.
+
+### Known limitation / follow-up
+
+The availability endpoint is **postal-code-centred with a ~90 km radius and no
+store-list parameter** (§3), so step 4's outward probe can only ever seed calls
+with a *catalog* store's postal code — it has no way to ask "what's near me" for
+a point the API itself won't answer for. A postal code with **no Staples at all
+within ~90 km** (e.g. `P0T 2L0` Atikokan, see §3's table) gets an empty nearby
+list from the API and the current adapter stops there instead of falling back
+to a nationwide sweep: there is no seed to probe outward *from*, because the
+prober needs a starting postal code the API accepts and returns something for.
+This is a real gap for rural users, not yet fixed here. Two seeding ideas for a
+follow-up:
+
+- Pick the catalog store whose postal-code FSA (first 3 characters) is
+  geographically nearest the user's FSA and seed the first probe with *that*
+  store's own postal code instead of the user's — the outward prober already
+  handles catalog-seeded probes (§"Search strategy" step 4), so this only needs
+  a nearest-FSA lookup, not a new probing mode.
+- Ship a small FSA → lat/lon centroid table (Canada Post publishes ~1,650 FSAs)
+  so any postal code, in range or not, can be geolocated locally and handed to
+  `findNearestInStock` as the user point, the same way walmart/bestbuy already
+  do with their own store lists.
 
 ### Worthwhile optimisation
 

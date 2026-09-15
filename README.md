@@ -84,4 +84,6 @@ regenerates `src/retailers/staples/stores-ca.json`.
 
 Staples returns only the 5 nearest pickup-capable stores to a postal code (no way
 to specify a store list), so the nationwide search probes outward from the catalog,
-5 stores at a time, like Walmart.
+5 stores at a time, like Walmart. Staples' availability API only covers ~90 km
+around the postal code, so a postal code with no Staples in that radius gets no
+nationwide search yet (documented follow-up in `docs/staples-ca-endpoints.md`).
