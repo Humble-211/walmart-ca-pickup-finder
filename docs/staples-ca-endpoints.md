@@ -478,12 +478,12 @@ Ran the built extension (`npm run build`, `dist/`) in a scratch-profile Chrome
    opened a new tab at the canonical URL
    `https://www.staples.ca/products/14336-en-staples-copy-paper-20-lb-85-w-x-11-h-white-5000-sheets`
    (confirmed via `Target.getTargets`).
-2. **Scarce item (needs the nationwide search)** — found by probing the
-   inventory endpoint from bare Node against candidates from the public Algolia
-   product index (`shopify_products_title_asc`, query `"printer"`; 14 calls,
-   1 s apart): SKU `851635` ("Avery 9-1/4" x 11-1/8" Big Tab Pocket Insertable
-   Plastic Dividers for Laser/Inkjet Printers") is `availableqty: 0` at all 5
-   Toronto pickup stores (25, 26, 70, 86, 286) but in stock at Montréal
+2. **Scarce item (needs the nationwide search) — SKU `851635`** — found by
+   probing the inventory endpoint from bare Node against candidates from the
+   public Algolia product index (`shopify_products_title_asc`, query `"printer"`;
+   14 calls, 1 s apart). SKU `851635` ("Avery 9-1/4" x 11-1/8" Big Tab Pocket
+   Insertable Plastic Dividers for Laser/Inkjet Printers") is `availableqty: 0`
+   at all 5 Toronto pickup stores (25, 26, 70, 86, 286) but in stock at Montréal
    (`H3B 2Y3`). In the popup: nearby list showed all 5 Toronto stores "Out of
    stock", a "Searching farther stores… N checked, M to go" progress line
    advanced through ~20 stores over ~6 s, then the "Nearest in stock" box

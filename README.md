@@ -1,9 +1,9 @@
-# Pickup Finder (walmart.ca, bestbuy.ca)
+# Pickup Finder (walmart.ca, bestbuy.ca, staples.ca)
 
-Chrome extension. Paste a product URL from Walmart or Best Buy (Walmart item IDs
-still accepted) and a Canadian postal code; it lists the nearest stores of that
-retailer with pickup status and then searches the whole country for the nearest
-store that has the item in stock.
+Chrome extension. Paste a product URL from Walmart, Best Buy, or Staples (Walmart
+item IDs still accepted) and a Canadian postal code; it lists the nearest stores
+of that retailer with pickup status and then searches the whole country for the
+nearest store that has the item in stock.
 
 For Walmart, item IDs come in two forms, both accepted: numeric (`6000208927194`)
 and 12-character alphanumeric (`1SZQHN3LOSE0`). Both appear at the end of the
@@ -30,12 +30,13 @@ Each retailer has an adapter in `src/retailers/<name>/`:
 - `urls.js` recognizes product URLs for that domain.
 - `content.js` runs on that domain and answers inventory lookups.
 
-Endpoints are documented in `docs/walmart-ca-endpoints.md` and `docs/bestbuy-ca-endpoints.md`.
+Endpoints are documented in `docs/walmart-ca-endpoints.md`, `docs/bestbuy-ca-endpoints.md`,
+and `docs/staples-ca-endpoints.md`.
 Design: `docs/superpowers/specs/`.
 
 For Walmart, clicking Order pickup calls the setPickup mutation, which changes the
 selected pickup store for your whole walmart.ca session, not just the opened tab.
-For Best Buy, store rows open the product page.
+For Best Buy and Staples, store rows open the product page.
 
 ## Adding a retailer
 
@@ -78,4 +79,9 @@ probing variables against the live endpoint.
 `tools/build-store-list.mjs` (Walmart API) and `tools/build-store-list-pages.mjs`
 (Walmart store pages, not rate-limited) regenerate the store coordinate list in
 `src/retailers/walmart/stores-ca.json`. `tools/build-bestbuy-stores.mjs`
-regenerates `src/retailers/bestbuy/stores-ca.json`.
+regenerates `src/retailers/bestbuy/stores-ca.json`. `tools/build-staples-stores.mjs`
+regenerates `src/retailers/staples/stores-ca.json`.
+
+Staples returns only the 5 nearest pickup-capable stores to a postal code (no way
+to specify a store list), so the nationwide search probes outward from the catalog,
+5 stores at a time, like Walmart.
