@@ -2,6 +2,10 @@ import { describe, it, expect } from "vitest";
 import { RETAILERS, parseProductUrl } from "../src/retailers/index.js";
 
 describe("parseProductUrl", () => {
+  it("routes a bestbuy.ca product URL to the bestbuy adapter", () => {
+    expect(parseProductUrl("https://www.bestbuy.ca/en-ca/product/playstation-5-pro-console/18291446"))
+      .toEqual({ retailer: "bestbuy", itemId: "18291446" });
+  });
   it("routes a walmart.ca product URL to the walmart adapter", () => {
     expect(parseProductUrl("https://www.walmart.ca/en/ip/PlayStation-5-Pro-Console/1SZQHN3LOSE0"))
       .toEqual({ retailer: "walmart", itemId: "1SZQHN3LOSE0" });
