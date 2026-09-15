@@ -21,6 +21,10 @@ describe("bestbuy parsers", () => {
   it("parseProduct throws api_changed on an unexpected shape", () => {
     expect(() => parseProduct({ foo: 1 })).toThrow(expect.objectContaining({ code: "api_changed" }));
   });
+  it("parseProduct yields an empty priceString when both prices are null", () => {
+    const item = parseProduct({ items: [{ sku: "19446111", name: "PlayStation 5 Slim 1TB Console", salePrice: null, regularPrice: null }] });
+    expect(item.priceString).toBe("");
+  });
   it("parseStores maps id, address, coordinates and distance", () => {
     const stores = parseStores(load("bestbuy-stores.json"));
     expect(stores.length).toBeGreaterThan(0);

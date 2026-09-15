@@ -14,7 +14,7 @@ export function parseProduct(json) {
   return {
     id: String(p.sku),
     name: String(p.name),
-    priceString: Number.isFinite(Number(price)) ? `$${Number(price).toFixed(2)}` : "",
+    priceString: typeof price === "number" && Number.isFinite(price) ? `$${price.toFixed(2)}` : "",
     imageUrl: p.thumbnailImage ? String(p.thumbnailImage) : null,
     url: ORIGIN + path,
     retailer: "bestbuy",
@@ -30,8 +30,8 @@ export function parseStores(json) {
     name: String(s.name ?? ""),
     address: [s.address1, [s.city, [s.region, s.postalCode].filter(Boolean).join(" ")].filter(Boolean).join(", ")].filter(Boolean).join(", "),
     postalCode: String(s.postalCode ?? ""),
-    lat: Number(s.lat),
-    lon: Number(s.lng),
+    lat: Number.isFinite(Number(s.lat)) ? Number(s.lat) : null,
+    lon: Number.isFinite(Number(s.lng)) ? Number(s.lng) : null,
     distanceKm: Number.isFinite(Number(s.distance)) ? Number(s.distance) : null,
   }));
 }
