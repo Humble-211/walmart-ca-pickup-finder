@@ -6,6 +6,7 @@ export const ERROR_MESSAGES = {
   api_changed: "Walmart changed its API",
   rate_limited: "walmart.ca is rate-limiting requests. Wait a minute or two and try again.",
   unknown: "Something went wrong.",
+  unsupported: "This store is not supported yet. Paste a product URL from Walmart or Best Buy.",
 };
 
 export class WalmartApiError extends Error {

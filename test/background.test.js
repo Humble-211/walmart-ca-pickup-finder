@@ -1,0 +1,39 @@
+import { describe, it, expect, vi } from "vitest";
+import { handle } from "../src/background.js";
+
+function fakeChrome({ tabs = [], answers = {} } = {}) {
+  const created = [];
+  const chrome = {
+    tabs: {
+      query: vi.fn(async ({ url }) => tabs.filter((t) => new RegExp("^" + url.replace(/[.]/g, "\\.").replace("*", ".*")).test(t.url))),
+      sendMessage: vi.fn(async (tabId, msg) => (msg.type === "ping" ? { ok: true } : answers[tabId] ?? { ok: true, echo: msg })),
+      reload: vi.fn(async () => {}),
+      create: vi.fn(async ({ url }) => { const t = { id: 100 + created.length, url }; created.push(t); tabs.push(t); return t; }),
+    },
+  };
+  return { chrome, created };
+}
+
+describe("background handle", () => {
+  it("forwards a lookup to a tab on the retailer's host", async () => {
+    const { chrome } = fakeChrome({ tabs: [{ id: 1, url: "https://www.walmart.ca/en" }, { id: 2, url: "https://www.bestbuy.ca/en-ca" }] });
+    const res = await handle({ type: "lookup", retailer: "walmart", itemId: "1", postalCode: "M5V 3L9" }, { chrome });
+    expect(chrome.tabs.sendMessage).toHaveBeenCalledWith(1, expect.objectContaining({ type: "lookup" }));
+    expect(res.echo.itemId).toBe("1");
+  });
+  it("opens the retailer's home page when no tab exists", async () => {
+    const { chrome, created } = fakeChrome();
+    await handle({ type: "lookup", retailer: "walmart", itemId: "1", postalCode: "M5V 3L9" }, { chrome, sleepMs: 0 });
+    expect(created[0].url).toBe("https://www.walmart.ca/en");
+  });
+  it("rejects an unknown retailer", async () => {
+    const { chrome } = fakeChrome();
+    expect(await handle({ type: "lookup", retailer: "sears" }, { chrome })).toMatchObject({ ok: false, code: "unsupported" });
+  });
+  it("refuses to open a product URL on another host after selectStore", async () => {
+    const { chrome } = fakeChrome({ tabs: [{ id: 1, url: "https://www.walmart.ca/en" }] });
+    const res = await handle({ type: "selectStore", retailer: "walmart", store: {}, postalCode: "M5V 3L9", itemUrl: "https://evil.example/x" }, { chrome });
+    expect(res.ok).toBe(false);
+    expect(chrome.tabs.create).not.toHaveBeenCalled();
+  });
+});
