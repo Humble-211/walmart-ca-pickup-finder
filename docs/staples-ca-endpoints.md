@@ -464,3 +464,36 @@ codes. Typical cost: 1 Algolia call + 1-3 availability calls instead of dozens.
 Note it adds `https://*.algolia.net/*` to `host_permissions` and depends on an
 index Staples could stop publishing, so keep step 4's plain outward probe as the
 fallback path.
+
+## End-to-end check (2026-09-15)
+
+Ran the built extension (`npm run build`, `dist/`) in a scratch-profile Chrome
+(`--remote-debugging-port=9223 --enable-unsafe-extension-debugging`, loaded via
+`Extensions.loadUnpacked`), driven through the popup with postal code
+`M5V 3L9`:
+
+1. **In stock nearby** — `https://www.staples.ca/products/14336-en-staples-copy-paper-20-lb-85-w-x-11-h-white-5000-sheets`:
+   nearby list showed all 5 Toronto stores "In stock" with distances, "Nearest
+   in stock" box populated with the 3 closest, and clicking "Open product page"
+   opened a new tab at the canonical URL
+   `https://www.staples.ca/products/14336-en-staples-copy-paper-20-lb-85-w-x-11-h-white-5000-sheets`
+   (confirmed via `Target.getTargets`).
+2. **Scarce item (needs the nationwide search)** — found by probing the
+   inventory endpoint from bare Node against candidates from the public Algolia
+   product index (`shopify_products_title_asc`, query `"printer"`; 14 calls,
+   1 s apart): SKU `851635` ("Avery 9-1/4" x 11-1/8" Big Tab Pocket Insertable
+   Plastic Dividers for Laser/Inkjet Printers") is `availableqty: 0` at all 5
+   Toronto pickup stores (25, 26, 70, 86, 286) but in stock at Montréal
+   (`H3B 2Y3`). In the popup: nearby list showed all 5 Toronto stores "Out of
+   stock", a "Searching farther stores… N checked, M to go" progress line
+   advanced through ~20 stores over ~6 s, then the "Nearest in stock" box
+   populated with 3 Ontario stores the outward probe found closer than
+   Montréal (Thornhill 17.6 km, Mississauga 18.8 km, Markham 22.3 km) — the
+   probe correctly found nearer stock than the one used to locate the scarce
+   item.
+3. **Unknown item** — `https://www.staples.ca/products/99999999-en-nothing`:
+   popup showed "Item not found." with no store lists.
+
+All three matched the expected behaviour; no bot challenge or rate limiting
+was seen. Total Node-side inventory calls across discovery and the e2e run:
+well under the ~40-call, 1 s-apart budget.
