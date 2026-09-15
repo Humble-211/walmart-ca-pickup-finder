@@ -148,7 +148,7 @@ describe("fetching", () => {
     fetchMock.mockResolvedValue(jsonResponse('{"code":400,"message":"Something went wrong while processing the query."}', 400));
     await expect(findStores("M1P 4P5", "1")).rejects.toMatchObject({
       code: "api_changed",
-      message: 'Walmart changed its API: {"code":400,"message":"Something went wrong while processing the query."}',
+      message: '{label} changed its API: {"code":400,"message":"Something went wrong while processing the query."}',
     });
   });
 

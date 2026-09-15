@@ -8,7 +8,10 @@ const NEVER_IN_STORE = new Set(["OnlineOnly", "NotAvailable"]);
 
 // api: { LOCATIONS_PER_CALL, getAvailability(sku, ids) -> { aggregate, statuses } }
 // catalog: [{ id, name, address, postalCode, lat, lon }] — every store in Canada.
-export async function findNearestInStock({ sku, nearby, checkedIds = [], onProgress, api, catalog, gapMs = 0 }) {
+// productUrl: the canonical product page URL to attach to far-store results;
+// falls back to the slug-less form when not given.
+export async function findNearestInStock({ sku, nearby, checkedIds = [], onProgress, api, catalog, gapMs = 0, productUrl }) {
+  const url = productUrl || PRODUCT_URL(sku);
   const coords = new Map(catalog.map((s) => [s.id, s]));
   const inStock = nearby.filter((s) => s.status === "available");
   const checked = new Set([...nearby.map((s) => s.id), ...checkedIds]);
@@ -37,7 +40,7 @@ export async function findNearestInStock({ sku, nearby, checkedIds = [], onProgr
     for (const { s, km } of batch) {
       checked.add(s.id); // ids the service does not carry are absent from the response: unknown, but checked
       if (result.statuses.get(s.id) === "available") {
-        inStock.push({ id: s.id, name: s.name, address: s.address, postalCode: s.postalCode, distanceKm: km, status: "available", url: PRODUCT_URL(sku) });
+        inStock.push({ id: s.id, name: s.name, address: s.address, postalCode: s.postalCode, distanceKm: km, status: "available", url });
       }
     }
     onProgress?.({ calls: i / api.LOCATIONS_PER_CALL + 1, searched: checked.size, remaining: todo.length - i - batch.length });

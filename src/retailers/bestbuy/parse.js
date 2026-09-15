@@ -4,9 +4,11 @@ import { WalmartApiError, apiChanged } from "../../lib/errors.js";
 const ORIGIN = "https://www.bestbuy.ca";
 
 // /api/v1/catalog/query response -> Item. total 0 / no items = unknown SKU.
-export function parseProduct(json) {
+// sku: when given, selects that item out of the (possibly multi-item) response;
+// falls back to the first item if the sku isn't present.
+export function parseProduct(json, sku) {
   if (!json || typeof json !== "object" || !Array.isArray(json.items)) throw apiChanged(JSON.stringify(json));
-  const p = json.items[0];
+  const p = (sku != null ? json.items.find((i) => String(i.sku) === String(sku)) : null) ?? json.items[0];
   if (!p) throw new WalmartApiError("not_found");
   if (!p.sku || !p.name) throw apiChanged(JSON.stringify(json));
   const price = p.salePrice ?? p.regularPrice;
@@ -18,6 +20,7 @@ export function parseProduct(json) {
     imageUrl: p.thumbnailImage ? String(p.thumbnailImage) : null,
     url: ORIGIN + path,
     retailer: "bestbuy",
+    pickupEligible: p.isOnlineOnly !== true,
   };
 }
 

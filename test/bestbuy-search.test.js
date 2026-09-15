@@ -46,6 +46,14 @@ describe("bestbuy findNearestInStock", () => {
     expect(new Set(res.checkedIds)).toEqual(new Set(["1", "2", "4"]));
     expect(progress).toHaveBeenCalled();
   });
+  it("uses the canonical productUrl for far-store results when given", async () => {
+    const api = fakeApi(new Set(["3", "4"]), { perCall: 1 });
+    const res = await findNearestInStock({
+      sku: "1", nearby: [near(catalog[0])], api, catalog,
+      productUrl: "https://www.bestbuy.ca/en-ca/product/playstation-5-slim-1tb-console/1",
+    });
+    expect(res.inStock[0].url).toBe("https://www.bestbuy.ca/en-ca/product/playstation-5-slim-1tb-console/1");
+  });
   it("reports a complete, empty search when nothing is in stock anywhere", async () => {
     const api = fakeApi(new Set(), { perCall: 3 });
     const res = await findNearestInStock({ sku: "1", nearby: [near(catalog[0])], api, catalog });

@@ -4,10 +4,13 @@ Three plain REST/JSON endpoints under `https://www.bestbuy.ca` cover the whole
 flow. Unlike walmart.ca there is **no GraphQL, no persisted-query hash, no tenant
 header, no cookie and no bot clearance**: every call below was verified to return
 HTTP 200 from a bare `node -e "fetch(url)"` with no cookies, no `Referer`, no
-`Origin` and the default Node user agent. The extension can therefore call them
-straight from the MV3 service worker with `host_permissions:
+`Origin` and the default Node user agent. In principle the extension could
+call them straight from the MV3 service worker with `host_permissions:
 ["https://www.bestbuy.ca/*"]` — no content script and no `credentials:"include"`
-needed.
+needed. In practice the extension still runs these calls from a bestbuy.ca
+content script (`src/retailers/bestbuy/content.js`), the same as walmart.ca, so
+every retailer adapter works the same way and the background worker stays a
+thin router (`src/background.js`).
 
 No bot challenge (press-and-hold / "Access Denied") was seen at any point during
 discovery.
@@ -150,6 +153,17 @@ items[]:
 Canonical URL: prefix `productUrl` with `https://www.bestbuy.ca`. It comes back
 with a capital `/en-CA/`; the site serves lowercase `/en-ca/` and both work.
 
+**Slug-less form (fix wave, 2026-09-15):** `https://www.bestbuy.ca/en-ca/product/<sku>`
+(no slug segment) does load — verified by opening it in the debug Chrome used
+for the end-to-end check below — and the site 302s it to the canonical slugged
+URL (`.../product/<seo-slug>/<sku>`), landing on the correct product page with
+the right title. So the slug-less form is a safe fallback when the canonical
+`productUrl` isn't known yet (e.g. before the catalog call completes), but the
+extension now threads the real canonical URL (`item.url` from the catalog
+response) through `lookup` and `findInStock` wherever it's available, since it
+avoids the extra redirect hop and there was no documented guarantee the
+redirect would always hold.
+
 `isOnlineOnly` / `isMarketplace` are worth showing in the UI: such items have no
 store pickup at all and the availability call will report `"OnlineOnly"`.
 
@@ -290,6 +304,24 @@ implement the batched pass, not walmart's outward-probing `lib/stock-search.js`:
 4. Short-circuit when `pickup.status` is `"OnlineOnly"` or `"NotAvailable"` on the
    first batch — the item has no in-store pickup anywhere.
 
+## Known limitation / follow-up
+
+The store list (`/api/v3/json/locations`) is postal-code-centred with a fixed
+~50 km radius and no way to widen it (see §3). When the locator returns **no
+store at all** within that radius (e.g. a rural or northern postal code far
+from any Best Buy), `lookupStores` gets an empty nearby list, `locateUser` has
+no store distances to triangulate from, and the popup stops at "No pickup
+stores found" — the nationwide `findNearestInStock` sweep never runs because
+it has no seed point to sort the catalog by distance from. This is parked as a
+follow-up, not implemented here.
+
+The fix, when it's picked up: `GET /api/v3/json/locations/locate?includeStores=false&lang=en-CA&postalCode=<postal>`
+geocodes the postal code directly to `{city, region, latitude, longitude,
+postalCode}` (see "Other endpoints seen" above) without depending on any store
+being nearby. That `{latitude, longitude}` can seed `findNearestInStock`'s
+nationwide sweep over the static `stores-ca.json` catalog even when the
+50 km-radius locator call comes back empty.
+
 ## End-to-end check (2026-09-15)
 
 Ran the built extension (`dist/`) in a scratch-profile Chrome
@@ -317,3 +349,46 @@ this check, the popup's `.item` card CSS (`display: flex`) overrides the
 visually present (though marked `hidden`) when a later lookup in the same
 popup instance fails before rendering a new item — a pre-existing
 `popup.css` issue, not introduced by this task and out of this task's scope.
+**Update (fix wave, 2026-09-15):** this was fixed in commit `a4f35ac`, which
+added `.item[hidden] { display: none; }` to `src/popup/popup.css`.
+
+### Nationwide sweep check (fix wave, 2026-09-15)
+
+Rebuilt `dist/` after the fix wave's changes, loaded it via `Extensions.loadUnpacked`
+into a scratch-profile Chrome (`--remote-debugging-port=9223
+--enable-unsafe-extension-debugging`), and drove the popup with `tools`/`e2e.mjs`
+(in the session scratchpad).
+
+Picked a SKU expected to be out of stock at every Toronto-area store but in
+stock elsewhere: queried `/ecomm-api/availability/products` directly from
+Node (no cookies needed) for ~60 candidate SKUs pulled from
+`/api/v2/json/search` against the 66 stores-ca.json stores whose postal code
+starts with M or L, then checked the handful that came back `aggregate:
+OutOfStock` (not `NotAvailable`/`Preorder`, which never carry stock) against
+the remaining 241 stores. SKU `19274597` (Acer Nitro V 15.6" Gaming Laptop,
+$1999.99) was 0/56 in stock in Toronto and 3/241 in stock elsewhere (including
+locationId `13`, West Vancouver).
+
+Ran `node e2e.mjs "https://www.bestbuy.ca/en-ca/product/x/19274597" "M5V 3L9" 90`:
+
+- 1.5s: "Looking up…"
+- 4.5s: "Searching farther stores… 100 checked, 207 to go" — the progress line
+  requested by the brief.
+- 6.0s: search complete.
+- "Nearest in stock" box: **Place Laurier, 2700 Boul. Laurier, Unit 2290,
+  Quebec, QC G1V 2L8 — In stock — 723.2 km — Open product page.**
+- Nearby stores list: all 10 nearest Toronto stores shown "Out of stock" (0.6
+  km to 8.1 km), matching the SKU selection.
+- Checked via `Runtime.evaluate` in the popup's own devtools session:
+  `document.getElementById("itemName").href` was
+  `https://www.bestbuy.ca/en-ca/product/acer-nitro-v-15-6-165hz-gaming-laptop-amd-ryzen-7-7735hs-16gb-ddr5-512gb-ssd-rtx-4050-windows-11-black/19274597`
+  (canonical, slugged) and the "Open product page" button on the far store
+  row was enabled (i.e. `s.url` was set) — confirming finding 3's URL
+  threading end to end, not just via the unit tests.
+
+Also opened `https://www.bestbuy.ca/en-ca/product/19274597` (slug-less) directly
+in that Chrome: it redirected to the canonical slugged URL and rendered the
+correct product page (see "Product URL shape" above).
+
+Closed the scratch Chrome afterward (`Stop-Process` filtered to processes
+whose command line referenced the scratch profile directory).

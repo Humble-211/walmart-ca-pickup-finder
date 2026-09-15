@@ -39,9 +39,18 @@ For Best Buy, store rows open the product page.
 
 ## Adding a retailer
 
-Create `src/retailers/<name>/{urls.js,content.js}` (see `bestbuy/` for the smallest
-example), register `urls.js` in `src/retailers/index.js`, add the host to
-`src/manifest.json`, and document the endpoints in `docs/<name>-endpoints.md`.
+Create `src/retailers/<name>/{urls.js,content.js}` — `walmart/urls.js` is the
+smallest `urls.js` to copy from (host, homeUrl, parseProductUrl, no network),
+and `bestbuy/content.js` is the smallest `content.js` (no cookies/session
+handling, unlike walmart's). Then:
+
+- register `urls.js` in `src/retailers/index.js`,
+- add the host to `host_permissions` **and** a matching `content_scripts` entry
+  in `src/manifest.json` (the popup and background never talk to the site
+  directly; the content script is what answers `lookup`/`findInStock`/
+  `selectStore`), and
+- document the endpoints in `docs/<name>-endpoints.md`.
+
 Design: `docs/superpowers/specs/`.
 
 ## When Walmart changes its API

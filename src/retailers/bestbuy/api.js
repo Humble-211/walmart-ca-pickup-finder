@@ -39,11 +39,13 @@ async function get(url) {
   return json;
 }
 
-export async function getItem(sku) { return parseProduct(await get(buildProductUrl(sku))); }
+export async function getItem(sku) { return parseProduct(await get(buildProductUrl(sku)), sku); }
 export async function getStores(postalCode) { return parseStores(await get(buildStoresUrl(postalCode))); }
 
 // One availability call; callers batch ids in chunks of LOCATIONS_PER_CALL.
 export async function getAvailability(sku, locationIds) {
-  if (locationIds.length > LOCATIONS_PER_CALL) throw new Error(`getAvailability: at most ${LOCATIONS_PER_CALL} locations per call`);
+  if (locationIds.length > LOCATIONS_PER_CALL) {
+    throw new WalmartApiError("unknown", `getAvailability: at most ${LOCATIONS_PER_CALL} locations per call`);
+  }
   return parseAvailability(await get(buildAvailabilityUrl(sku, locationIds)));
 }

@@ -65,7 +65,7 @@ describe("parseStores", () => {
     try { parseStores({ data: {} }); throw new Error("no throw"); } catch (e) {
       expect(e).toBeInstanceOf(WalmartApiError);
       expect(e.code).toBe("api_changed");
-      expect(e.message).toMatch(/^Walmart changed its API: /);
+      expect(e.message).toMatch(/^\{label\} changed its API: /);
     }
   });
 });

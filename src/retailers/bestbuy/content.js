@@ -15,13 +15,14 @@ function reportProgress(progress) {
 
 // The nearest stores to the postal code with this sku's pickup status.
 async function lookupStores(postalCode, sku) {
-  const near = (await api.getStores(postalCode)).slice(0, NEARBY);
+  const all = await api.getStores(postalCode);
+  const near = rankStores(all).slice(0, NEARBY);
   if (!near.length) return [];
   const { statuses } = await api.getAvailability(sku, near.map((s) => s.id));
-  return rankStores(near.map((s) => ({
+  return near.map((s) => ({
     id: s.id, name: s.name, address: s.address, postalCode: s.postalCode, distanceKm: s.distanceKm,
     status: statuses.get(s.id) ?? "unknown", url: PRODUCT_URL(sku),
-  })));
+  }));
 }
 
 async function handle(msg) {
@@ -30,6 +31,8 @@ async function handle(msg) {
       return { ok: true };
     case "lookup": {
       const [item, stores] = await Promise.all([api.getItem(msg.itemId), lookupStores(msg.postalCode, msg.itemId)]);
+      // Use the canonical (slugged) product URL everywhere now that we have it.
+      for (const s of stores) s.url = item.url;
       return { ok: true, item, stores };
     }
     case "findInStock": {
@@ -37,6 +40,7 @@ async function handle(msg) {
       const result = await findNearestInStock({
         sku: msg.itemId, nearby: msg.nearby, checkedIds: msg.checkedIds ?? [],
         onProgress: reportProgress, api, catalog: catalog.stores, gapMs: SEARCH_GAP_MS,
+        productUrl: msg.itemUrl,
       });
       return { ok: true, ...result };
     }

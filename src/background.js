@@ -51,10 +51,12 @@ export async function handle(msg, { chrome = globalThis.chrome, sleepMs } = {}) 
     case "findInStock":
       return forward(chrome, adapter, msg, sleepMs);
     case "selectStore": {
-      const res = await forward(chrome, adapter, msg, sleepMs);
+      // Validate before forwarding: a refused URL must never reach the content script,
+      // which may change store selection for the whole retailer session (e.g. walmart's setPickup).
       if (typeof msg.itemUrl !== "string" || !msg.itemUrl.startsWith(`https://${adapter.host}/`)) {
         return { ok: false, code: "unknown", error: `Refused to open a URL outside ${adapter.host}.` };
       }
+      const res = await forward(chrome, adapter, msg, sleepMs);
       await chrome.tabs.create({ url: msg.itemUrl, active: true });
       return res;
     }

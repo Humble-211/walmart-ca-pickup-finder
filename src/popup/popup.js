@@ -1,11 +1,24 @@
 import { parseProductUrl, RETAILERS } from "../retailers/index.js";
 import { normalizePostalCode } from "../lib/postal-code.js";
+import { formatError } from "../lib/errors.js";
 
 const $ = (id) => document.getElementById(id);
 const STATUS_LABEL = { available: "In stock", out_of_stock: "Out of stock", unknown: "Unknown" };
 const NEAREST_SHOWN = 3;
 
 const state = { item: null, postalCode: "", itemId: "", retailer: "", nearby: [], inStock: [], checkedIds: [], searching: false };
+
+// The store labels the registry supports, for the label hint and the unsupported-site message.
+function storesList() {
+  const labels = Object.values(RETAILERS).map((a) => a.label);
+  return new Intl.ListFormat("en", { type: "conjunction" }).format(labels);
+}
+
+// Formats a message from the background/content script for display, filling in
+// {host}/{label}/{stores} placeholders from the retailer that raised it.
+function showApiError(error, retailer, fallback) {
+  showError(formatError(error ?? fallback, { ...RETAILERS[retailer], stores: storesList() }));
+}
 
 function showError(msg) { $("error").textContent = msg; $("error").hidden = !msg; }
 function showStatus(msg) { $("status").textContent = msg; $("status").hidden = !msg; }
@@ -89,7 +102,10 @@ async function orderPickup(store, btn) {
       type: "selectStore", retailer: state.retailer, store, postalCode: state.postalCode, itemUrl: state.item.url,
     });
     if (res?.ok) showStatus(`Opened product page with ${store.name} selected.`);
-    else { showStatus(""); showError(`${res?.error ?? "Failed to select store."} The product page was opened; pick the store there.`); }
+    else {
+      showStatus("");
+      showApiError(res?.error ? `${res.error} The product page was opened; pick the store there.` : "Failed to select store.", state.retailer);
+    }
   } catch (err) {
     showStatus("");
     showError(String(err?.message ?? err));
@@ -114,9 +130,10 @@ async function searchInStock() {
   try {
     const res = await chrome.runtime.sendMessage({
       type: "findInStock", retailer: state.retailer, itemId: state.itemId, nearby: state.nearby, checkedIds: state.checkedIds,
+      itemUrl: state.item.url,
     });
     showStatus("");
-    if (!res?.ok) { showError(res?.error ?? "Search failed."); return; }
+    if (!res?.ok) { showApiError(res?.error, state.retailer, "Search failed."); return; }
     mergeInStock(res.inStock ?? []);
     state.checkedIds = res.checkedIds ?? state.checkedIds;
     renderNearest(res);
@@ -136,7 +153,7 @@ async function lookup({ retailer, itemId }, postalCode) {
   clearResults();
   try {
     const res = await chrome.runtime.sendMessage({ type: "lookup", retailer, itemId, postalCode });
-    if (!res?.ok) { showStatus(""); showError(res?.error ?? "Lookup failed."); return; }
+    if (!res?.ok) { showStatus(""); showApiError(res?.error, retailer, "Lookup failed."); return; }
     state.item = res.item;
     state.itemId = itemId;
     state.retailer = retailer;
@@ -158,7 +175,7 @@ async function lookup({ retailer, itemId }, postalCode) {
 $("form").addEventListener("submit", (ev) => {
   ev.preventDefault();
   const parsed = parseProductUrl($("item").value);
-  if (!parsed) { clearResults(); showError("Paste a product URL from Walmart, Best Buy, Staples, Shoppers Drug Mart or GameStop (or a Walmart item ID)."); return; }
+  if (!parsed) { clearResults(); showError(`Paste a product URL from ${storesList()} (or a Walmart item ID).`); return; }
   const postalCode = normalizePostalCode($("postal").value);
   if (!postalCode) { clearResults(); showError("Enter a valid Canadian postal code (e.g. M5V 3L9)."); return; }
   $("postal").value = postalCode;
@@ -177,3 +194,5 @@ chrome.runtime.onMessage.addListener((msg) => {
 chrome.storage.local.get("postalCode").then(({ postalCode }) => {
   if (postalCode) $("postal").value = postalCode;
 });
+
+$("itemLabelStores").textContent = `(${storesList()})`;

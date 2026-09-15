@@ -31,11 +31,14 @@ for (const [i, seed] of SEEDS.entries()) {
   const res = await fetch(buildStoresUrl(seed));
   if (!res.ok) { console.log(`${seed}: HTTP ${res.status}`); continue; }
   const list = parseStores(await res.json());
-  let added = 0;
-  for (const s of list) if (!stores.has(s.id)) { stores.set(s.id, { id: s.id, name: s.name, address: s.address, postalCode: s.postalCode, lat: s.lat, lon: s.lon }); added++; }
-  console.log(`${i + 1}/${SEEDS.length} ${seed}: ${list.length} in range, ${added} new, ${stores.size} total`);
+  let added = 0, skipped = 0;
+  for (const s of list) {
+    if (!Number.isFinite(s.lat) || !Number.isFinite(s.lon)) { skipped++; continue; }
+    if (!stores.has(s.id)) { stores.set(s.id, { id: s.id, name: s.name, address: s.address, postalCode: s.postalCode, lat: s.lat, lon: s.lon }); added++; }
+  }
+  console.log(`${i + 1}/${SEEDS.length} ${seed}: ${list.length} in range, ${added} new, ${skipped} skipped (no coordinates), ${stores.size} total`);
   await sleep(GAP_MS);
 }
 const list = [...stores.values()].sort((a, b) => a.id.localeCompare(b.id));
-writeFileSync(OUT, JSON.stringify({ generatedAt: new Date().toISOString(), stores: list }));
+writeFileSync(OUT, JSON.stringify({ generatedAt: new Date().toISOString(), stores: list }) + "\n");
 console.log(`done: ${list.length} stores -> ${OUT}`);
