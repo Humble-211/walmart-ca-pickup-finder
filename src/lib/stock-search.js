@@ -5,7 +5,9 @@
 // the most not-yet-checked stores, until the nearest in-stock store is certain
 // or the call budget is spent. The probe shape is configurable: walmart uses
 // 50 stores within 100 km with centroid candidates (the default); staples uses
-// 5 stores within ~90 km, seeded only from catalog stores (no centroids).
+// 5 stores within ~90 km, seeded only from catalog stores (no centroids); shoppers
+// uses 10 stores within ~20 km and asks for in-stock stores only, reporting how far
+// each response is known to cover (see fetchAround below).
 import { haversineKm } from "./geo.js";
 
 export const DEFAULT_PROBE = { maxCount: 50, radiusKm: 100, centroids: true };
@@ -51,6 +53,10 @@ export function planProbe(uncovered, catalog = uncovered, probe = DEFAULT_PROBE)
   return best;
 }
 
+// fetchAround(lat, lon, centre) returns the stores the retailer reports around the centre,
+// either as an array or as { stores, coveredKm }. With coveredKm, every catalog store within
+// that distance of the centre counts as checked even when the response omits it (a
+// "stores with stock only" query covers everything nearer than its farthest hit).
 export async function findNearestInStock({ nearby, user, catalog, fetchAround, onProgress, maxCalls = 20, gapMs = 0, probe = {} }) {
   const p = { ...DEFAULT_PROBE, ...probe };
   const coords = new Map(catalog.map((s) => [s.id, s]));
@@ -66,17 +72,20 @@ export async function findNearestInStock({ nearby, user, catalog, fetchAround, o
 
   while (!settled() && calls < maxCalls) {
     const centre = planProbe(uncovered, catalog, p);
-    let stores;
+    let stores, coveredKm = null;
     try {
       if (gapMs && calls) await new Promise((r) => setTimeout(r, gapMs));
-      stores = await fetchAround(centre.lat, centre.lon, centre);
+      const res = await fetchAround(centre.lat, centre.lon, centre);
+      if (Array.isArray(res)) stores = res;
+      else { stores = res?.stores ?? []; coveredKm = Number.isFinite(res?.coveredKm) ? res.coveredKm : null; }
     } catch (err) {
       if (err?.code === "rate_limited") { rateLimited = true; break; }
       throw err;
     }
     calls++;
     if (centre.id != null) covered.add(centre.id); // even if walmart does not list it, never probe it twice
-    else if (!stores.length) covered.add(uncovered[0].id); // centroid probe returned nothing: still make progress
+    else if (!stores.length && coveredKm == null) covered.add(uncovered[0].id); // centroid probe returned nothing: still make progress
+    if (coveredKm != null) for (const s of uncovered) if (haversineKm(centre, s) <= coveredKm) covered.add(s.id);
     for (const s of stores) {
       covered.add(s.id);
       const c = coords.get(s.id);
