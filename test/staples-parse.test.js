@@ -20,8 +20,19 @@ describe("staples parseProduct", () => {
     const item = parseProduct({ ...product, tags: ["bopis_eligible:False"] }, HANDLE);
     expect(item.pickupEligible).toBe(false);
   });
+  it("matches the bopis_eligible tag case-insensitively", () => {
+    const item = parseProduct({ ...product, tags: ["bopis_eligible:false"] }, HANDLE);
+    expect(item.pickupEligible).toBe(false);
+  });
   it("throws api_changed on an unexpected shape", () => {
     expect(() => parseProduct({ foo: 1 }, HANDLE)).toThrow(expect.objectContaining({ code: "api_changed" }));
+  });
+  it("falls back to an empty priceString, a null imageUrl, and a built url when those fields are missing", () => {
+    const { price, featured_image, url, ...rest } = product;
+    const item = parseProduct(rest, HANDLE);
+    expect(item.priceString).toBe("");
+    expect(item.imageUrl).toBeNull();
+    expect(item.url).toBe(`https://www.staples.ca/products/${HANDLE}`);
   });
 });
 
@@ -47,5 +58,22 @@ describe("staples parseAvailability", () => {
   });
   it("throws api_changed when the availability object is missing", () => {
     expect(() => parseAvailability({ success: false }, SKU)).toThrow(expect.objectContaining({ code: "api_changed" }));
+  });
+  it("maps a non-numeric or missing availableqty to status unknown", () => {
+    const stores = parseAvailability({ availability: { [SKU]: {
+      "1": { city: "A", zipCode: "A1A 1A1", distance: "1", availableqty: "n/a" },
+      "2": { city: "B", zipCode: "B2B 2B2", distance: "2" },
+    } } }, SKU);
+    expect(stores.find((s) => s.id === "1").status).toBe("unknown");
+    expect(stores.find((s) => s.id === "2").status).toBe("unknown");
+  });
+  it("sorts a store with a non-numeric distance (null distanceKm) last", () => {
+    const stores = parseAvailability({ availability: { [SKU]: {
+      "1": { city: "Far", zipCode: "A1A 1A1", distance: "50", availableqty: 1 },
+      "2": { city: "Unknown distance", zipCode: "B2B 2B2", distance: "n/a", availableqty: 1 },
+      "3": { city: "Near", zipCode: "C3C 3C3", distance: "1", availableqty: 1 },
+    } } }, SKU);
+    expect(stores.map((s) => s.id)).toEqual(["3", "1", "2"]);
+    expect(stores.find((s) => s.id === "2").distanceKm).toBeNull();
   });
 });

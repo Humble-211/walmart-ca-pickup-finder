@@ -34,6 +34,10 @@ describe("staples fetching", () => {
     fetchMock.mockResolvedValue(new Response("", { status: 404 }));
     await expect(getItem("99999999-en-nope")).rejects.toMatchObject({ code: "not_found" });
   });
+  it("getItem maps an HTML-bodied 404 to not_found, not verification", async () => {
+    fetchMock.mockResolvedValue(new Response("<!DOCTYPE html><html><body>Not Found</body></html>", { status: 404, headers: { "content-type": "text/html" } }));
+    await expect(getItem("99999999-en-nope")).rejects.toMatchObject({ code: "not_found" });
+  });
   it("getAvailability POSTs JSON with credentials omitted and parses the stores", async () => {
     fetchMock.mockResolvedValue(jsonResponse(fx("staples-availability.json")));
     const stores = await getAvailability("3082604", "M5V 3L9");

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
-import { searchInStock } from "../src/retailers/staples/search.js";
+import { searchInStock, withCatalogNames } from "../src/retailers/staples/search.js";
 import { haversineKm } from "../src/lib/geo.js";
 
 // 8 stores along a line 60 km apart; the API returns the 5 nearest within 90 km of the seed store's postal code.
@@ -36,5 +36,18 @@ describe("staples searchInStock", () => {
     const api = fakeApi(new Set());
     const res = await searchInStock({ sku: "1", nearby: [{ id: "999", status: "out_of_stock", distanceKm: 1 }], catalog, api, productUrl: "u" });
     expect(res.noLocation).toBe(true);
+    expect(res.calls).toBe(0);
+  });
+});
+
+describe("withCatalogNames", () => {
+  const catalogById = new Map([["3", { id: "3", name: "Staples Toronto - Leaside" }]]);
+  it("replaces a returned store's parsed name with the catalog name when the id is known", () => {
+    const stores = [{ id: "3", name: "Staples Toronto" }];
+    expect(withCatalogNames(stores, catalogById)[0].name).toBe("Staples Toronto - Leaside");
+  });
+  it("falls back to the parsed name when the id is not in the catalog", () => {
+    const stores = [{ id: "999", name: "Staples Nowhere" }];
+    expect(withCatalogNames(stores, catalogById)[0].name).toBe("Staples Nowhere");
   });
 });

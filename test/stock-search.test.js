@@ -125,7 +125,6 @@ describe("probe options", () => {
   // Stores 60 km apart in a line; a 5-store / 90 km probe centred on a store reaches only its neighbours.
   const line = [];
   for (let i = 0; i < 30; i++) line.push({ id: `l${i}`, lat: 45, lon: -75 + i * 0.76, postalCode: `P${i}` });
-  const lineById = new Map(line.map((s) => [s.id, s]));
   const lineUser = { lat: 45, lon: -75 };
   const lineApi = (inStock, seen) => vi.fn(async (lat, lon, centre) => {
     seen?.push(centre);
@@ -135,17 +134,15 @@ describe("probe options", () => {
   });
   const lineNearby = (inStock) => line.slice(0, 5).map((s) => ({ id: s.id, status: inStock.has(s.id) ? "available" : "out_of_stock", distanceKm: haversineKm(lineUser, s) }));
 
-  it("planProbe with centroids disabled only ever returns a catalog store", () => {
-    // Brief's literal expectation here (c.id === "l5") is unsatisfiable together with the
-    // <=3-calls requirement in the next test: with a store's own window wasting a slot on an
-    // already-covered neighbour, the coverage-maximizing scorer (shared with the centroid path,
-    // and required by the "2-3 calls, never 20" test below) always prefers a store one step
-    // deeper into the uncovered run over the nearest store itself. Asserting the test's own
-    // stated behaviour instead: never a centroid (id null), always a real catalog store.
+  it("planProbe with centroids disabled only ever returns a catalog store, nearest-first", () => {
+    // The coverage-maximizing scorer prefers l6 over l5: l5's own window wastes a slot on an
+    // already-covered neighbour, while l6's window covers more of the uncovered run.
     const uncovered = line.slice(5).map((s) => ({ ...s, userKm: haversineKm(lineUser, s) }));
     const c = planProbe(uncovered, line, { maxCount: 5, radiusKm: 90, centroids: false });
-    expect(c.id).toMatch(/^l\d+$/);
+    expect(c.id).toBe("l6");
     expect(c.postalCode).toMatch(/^P\d+$/);
+    // Nearest-first invariant: the chosen centre must still be within probe range of the nearest uncovered store.
+    expect(haversineKm(c, uncovered[0])).toBeLessThanOrEqual(90);
   });
 
   it("passes the chosen centre (with its catalog fields) to fetchAround and honours maxCount/radius", async () => {

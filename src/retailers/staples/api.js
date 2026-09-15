@@ -20,10 +20,13 @@ async function request(url, init = {}) {
   const res = await globalThis.fetch(url, { credentials: "omit", ...init, headers: { accept: "application/json", ...(init.headers ?? {}) } });
   const text = await res.text();
   const contentType = res.headers.get("content-type") ?? "";
-  if (res.status === 403 || /text\/html/i.test(contentType) || /^\s*</.test(text)) throw new WalmartApiError("verification");
-  if (res.status === 429) throw new WalmartApiError("rate_limited");
+  // Check the specific status codes before the HTML/403 sniff, so e.g. a 404 served as an
+  // HTML error page (Cloudflare, a CDN 404, …) still maps to "not_found" rather than being
+  // mistaken for a bot-verification challenge.
   if (res.status === 404) throw new WalmartApiError("not_found");
+  if (res.status === 429) throw new WalmartApiError("rate_limited");
   if (res.status === 400 && /PostalCode/.test(text)) throw new WalmartApiError("invalid_postal");
+  if (res.status === 403 || /text\/html/i.test(contentType) || /^\s*</.test(text)) throw new WalmartApiError("verification");
   let json;
   try { json = JSON.parse(text); } catch { throw apiChanged(text); }
   if (!res.ok) throw apiChanged(text);

@@ -12,7 +12,7 @@ export const homeUrl = "https://www.staples.ca/";
 
 export function parseProductUrl(input) {
   const m = String(input ?? "").trim().match(URL_HANDLE);
-  return m ? m[1] : null;
+  return m ? m[1].toLowerCase() : null;
 }
 
 export function skuFromHandle(handle) {

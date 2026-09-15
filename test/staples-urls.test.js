@@ -14,6 +14,9 @@ describe("staples parseProductUrl", () => {
     expect(parseProductUrl("https://www.staples.ca/products/14336-en-staples-copy-paper")).toBe("14336-en-staples-copy-paper");
     expect(parseProductUrl("https://www.staples.ca/products/24501714-en-canon-pixma-tr4720")).toBe("24501714-en-canon-pixma-tr4720");
   });
+  it("lower-cases an upper-cased pasted URL's handle", () => {
+    expect(parseProductUrl(`https://www.staples.ca/products/${HANDLE.toUpperCase()}`)).toBe(HANDLE);
+  });
   it("rejects bare ids, handles without a sku prefix, and other hosts", () => {
     expect(parseProductUrl("3082604")).toBeNull();
     expect(parseProductUrl("https://www.staples.ca/products/brother-printer")).toBeNull();

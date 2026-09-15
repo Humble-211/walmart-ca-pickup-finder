@@ -16,7 +16,7 @@ export function parseProduct(json, handle) {
     imageUrl: image,
     url: typeof json.url === "string" && json.url.startsWith("/") ? ORIGIN + json.url : `${ORIGIN}/products/${handle}`,
     retailer: "staples",
-    pickupEligible: !tags.includes("bopis_eligible:False"),
+    pickupEligible: !tags.some((t) => /^bopis_eligible:false$/i.test(t)),
   };
 }
 
