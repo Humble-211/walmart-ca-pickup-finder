@@ -117,4 +117,23 @@ describe("parseItem", () => {
       expect(e.code).toBe("api_changed");
     }
   });
+
+  it("throws api_changed when the product has usItemId but no name", () => {
+    const json = { data: { product: { usItemId: "6000208927194", canonicalUrl: "/x" } } };
+    try { parseItem(json); throw new Error("no throw"); } catch (e) {
+      expect(e.code).toBe("api_changed");
+    }
+  });
+
+  it("falls back to /en/ip/<id> when canonicalUrl is not a same-origin path", () => {
+    const copy = structuredClone(item);
+    copy.data.product.canonicalUrl = "@evil.com/x";
+    expect(parseItem(copy).url).toBe("https://www.walmart.ca/en/ip/6000208927194");
+  });
+
+  it("falls back to /en/ip/<id> when canonicalUrl is protocol-relative", () => {
+    const copy = structuredClone(item);
+    copy.data.product.canonicalUrl = "//evil.com/x";
+    expect(parseItem(copy).url).toBe("https://www.walmart.ca/en/ip/6000208927194");
+  });
 });

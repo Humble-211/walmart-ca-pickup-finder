@@ -8,6 +8,7 @@ const state = { item: null, postalCode: "" };
 
 function showError(msg) { $("error").textContent = msg; $("error").hidden = !msg; }
 function showStatus(msg) { $("status").textContent = msg; $("status").hidden = !msg; }
+function clearResults() { $("itemCard").hidden = true; $("stores").replaceChildren(); }
 
 function renderItem(item) {
   $("itemCard").hidden = false;
@@ -40,7 +41,9 @@ function renderStores(stores) {
 }
 
 async function orderPickup(store, btn) {
-  btn.disabled = true;
+  const buttons = [...document.querySelectorAll(".pickup")];
+  const prev = buttons.map((b) => b.disabled);
+  buttons.forEach((b) => (b.disabled = true));
   showError("");
   showStatus(`Selecting ${store.name}…`);
   try {
@@ -53,7 +56,7 @@ async function orderPickup(store, btn) {
     showStatus("");
     showError(String(err?.message ?? err));
   } finally {
-    btn.disabled = false;
+    buttons.forEach((b, i) => (b.disabled = prev[i]));
   }
 }
 
@@ -61,8 +64,7 @@ async function lookup(itemId, postalCode) {
   $("submit").disabled = true;
   showError("");
   showStatus("Looking up…");
-  $("itemCard").hidden = true;
-  $("stores").replaceChildren();
+  clearResults();
   try {
     const res = await chrome.runtime.sendMessage({ type: "lookup", itemId, postalCode });
     if (!res?.ok) { showStatus(""); showError(res?.error ?? "Lookup failed."); return; }
@@ -82,9 +84,9 @@ async function lookup(itemId, postalCode) {
 $("form").addEventListener("submit", (ev) => {
   ev.preventDefault();
   const itemId = parseItemId($("item").value);
-  if (!itemId) { showError("Enter a walmart.ca item ID or product URL."); return; }
+  if (!itemId) { clearResults(); showError("Enter a walmart.ca item ID or product URL."); return; }
   const postalCode = normalizePostalCode($("postal").value);
-  if (!postalCode) { showError("Enter a valid Canadian postal code (e.g. M5V 3L9)."); return; }
+  if (!postalCode) { clearResults(); showError("Enter a valid Canadian postal code (e.g. M5V 3L9)."); return; }
   $("postal").value = postalCode;
   chrome.storage.local.set({ postalCode });
   lookup(itemId, postalCode);

@@ -20,10 +20,13 @@ async function ping(tabId) {
 async function getWalmartTab() {
   const tabs = await chrome.tabs.query({ url: "https://www.walmart.ca/*" });
   for (const t of tabs) if (await ping(t.id)) return t.id;
-  const created = tabs[0] ?? (await chrome.tabs.create({ url: WALMART_URL, active: false }));
+  // A tab opened before the extension was installed/reloaded has no content script until reloaded.
+  let target = tabs[0];
+  if (target) await chrome.tabs.reload(target.id);
+  else target = await chrome.tabs.create({ url: WALMART_URL, active: false });
   const deadline = Date.now() + READY_TIMEOUT_MS;
   while (Date.now() < deadline) {
-    if (await ping(created.id)) return created.id;
+    if (await ping(target.id)) return target.id;
     await sleep(READY_POLL_MS);
   }
   return null;
@@ -34,7 +37,7 @@ async function forward(msg) {
   if (tabId == null) return { ok: false, code: "no_tab", error: ERROR_MESSAGES.no_tab };
   try {
     return await chrome.tabs.sendMessage(tabId, msg);
-  } catch (err) {
+  } catch {
     return { ok: false, code: "no_tab", error: ERROR_MESSAGES.no_tab };
   }
 }
@@ -45,7 +48,10 @@ async function handle(msg) {
       return forward(msg);
     case "selectStore": {
       const res = await forward(msg);
-      if (msg.itemUrl) await chrome.tabs.create({ url: msg.itemUrl, active: true });
+      if (typeof msg.itemUrl !== "string" || !msg.itemUrl.startsWith("https://www.walmart.ca/")) {
+        return { ok: false, code: "unknown", error: "Refused to open a non-walmart.ca URL." };
+      }
+      await chrome.tabs.create({ url: msg.itemUrl, active: true });
       return res;
     }
     default:

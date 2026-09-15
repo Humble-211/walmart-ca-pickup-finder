@@ -42,15 +42,18 @@ export function parseStores(json) {
 export function parseItem(json) {
   if (!json || typeof json !== "object" || !("data" in json)) throw apiChanged(JSON.stringify(json));
   const p = json.data?.product;
-  if (p === null || (p && typeof p === "object" && !p.name && !p.usItemId)) throw new WalmartApiError("not_found");
+  if (p === null) throw new WalmartApiError("not_found");
   if (!p || typeof p !== "object") throw apiChanged(JSON.stringify(json));
+  if (!p.name && !p.usItemId) throw new WalmartApiError("not_found"); // live API returns an empty shell for unknown ids
+  if (!p.name) throw apiChanged(JSON.stringify(json));
   const id = String(p.usItemId ?? p.id ?? "");
+  const path = typeof p.canonicalUrl === "string" && /^\/(?!\/)/.test(p.canonicalUrl) ? p.canonicalUrl : `/en/ip/${id}`;
   return {
     id,
     name: String(p.name),
     priceString: String(p.priceInfo?.currentPrice?.priceString ?? ""),
     imageUrl: p.imageInfo?.thumbnailUrl ? String(p.imageInfo.thumbnailUrl) : null,
-    url: "https://www.walmart.ca" + (p.canonicalUrl || `/en/ip/${id}`),
+    url: "https://www.walmart.ca" + path,
     pickupEligible: p.pickupOption?.availabilityStatus != null,
   };
 }
