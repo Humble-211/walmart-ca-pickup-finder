@@ -70,7 +70,15 @@ function renderStores(stores) {
   $("nearbyHeading").hidden = !stores.length;
   // Per-store availability outranks the buy box's pickup flag (a marketplace offer can hide it).
   if (stores.some((s) => s.status !== "unknown")) $("itemNotice").hidden = true;
-  if (!stores.length) showStatus("No pickup stores found near that postal code.");
+  if (!stores.length) {
+    if (state.item?.pickupEligible === false) {
+      // Keep the item notice visible: it is the reason there are no stores to show.
+      showStatus("This item is not offered for store pickup.");
+    } else {
+      const label = RETAILERS[state.retailer]?.label ?? "pickup";
+      showStatus(`No ${label} pickup store found near that postal code.`);
+    }
+  }
 }
 
 // res: result of a findInStock message (may be partial).

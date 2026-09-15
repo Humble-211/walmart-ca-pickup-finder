@@ -6,6 +6,10 @@ describe("parseProductUrl", () => {
     expect(parseProductUrl("https://www.bestbuy.ca/en-ca/product/playstation-5-pro-console/18291446"))
       .toEqual({ retailer: "bestbuy", itemId: "18291446" });
   });
+  it("routes a staples.ca product URL to the staples adapter with the handle as item id", () => {
+    expect(parseProductUrl("https://www.staples.ca/products/3082604-en-brother-hl-l2405w-printer"))
+      .toEqual({ retailer: "staples", itemId: "3082604-en-brother-hl-l2405w-printer" });
+  });
   it("routes a walmart.ca product URL to the walmart adapter", () => {
     expect(parseProductUrl("https://www.walmart.ca/en/ip/PlayStation-5-Pro-Console/1SZQHN3LOSE0"))
       .toEqual({ retailer: "walmart", itemId: "1SZQHN3LOSE0" });

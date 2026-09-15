@@ -1,7 +1,7 @@
 # Multi-Retailer Pickup Finder — Design
 
 Date: 2026-09-15
-Status: implemented for walmart + bestbuy on 2026-09-15; staples/shoppers/gamestop pending discovery
+Status: implemented for walmart + bestbuy + staples on 2026-09-15; shoppers/gamestop pending discovery
 Builds on: `2026-09-15-walmart-ca-pickup-finder-design.md`
 
 ## Goal
@@ -40,8 +40,11 @@ later discovery + implementation round on the same framework.
 - "Nearest in stock nationwide" is retailer-specific. walmart.ca returns at
   most 50 stores within 100 km per call and rate-limits hard, so it probes
   outward (`lib/stock-search.js`). Best Buy is expected to answer stock for
-  many stores in one call, so its search is one batched pass. The adapter
-  decides; the popup only sees the shared result shape.
+  many stores in one call, so its search is one batched pass. staples.ca
+  returns only 5 pickup-capable stores within ~90 km per postal code (no way
+  to specify a store list), so it reuses the outward prober with a small probe
+  shape (`probe` option in `lib/stock-search.js`). The adapter decides; the
+  popup only sees the shared result shape.
 
 ## Architecture
 

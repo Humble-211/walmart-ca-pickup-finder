@@ -1,14 +1,15 @@
 {
   "manifest_version": 3,
-  "name": "Pickup Finder (Walmart, Best Buy)",
+  "name": "Pickup Finder (Walmart, Best Buy, Staples)",
   "version": "0.1.0",
-  "description": "Find the nearest Walmart or Best Buy store that has an item in stock for pickup.",
+  "description": "Find the nearest Walmart, Best Buy or Staples store that has an item in stock for pickup.",
   "permissions": ["storage", "tabs"],
-  "host_permissions": ["https://www.walmart.ca/*", "https://www.bestbuy.ca/*"],
+  "host_permissions": ["https://www.walmart.ca/*", "https://www.bestbuy.ca/*", "https://www.staples.ca/*", "https://api.staples.ca/*"],
   "background": { "service_worker": "background.js" },
-  "action": { "default_popup": "popup/popup.html", "default_title": "Pickup Finder (Walmart, Best Buy)" },
+  "action": { "default_popup": "popup/popup.html", "default_title": "Pickup Finder (Walmart, Best Buy, Staples)" },
   "content_scripts": [
     { "matches": ["https://www.walmart.ca/*"], "js": ["content/walmart.js"], "run_at": "document_idle" },
-    { "matches": ["https://www.bestbuy.ca/*"], "js": ["content/bestbuy.js"], "run_at": "document_idle" }
+    { "matches": ["https://www.bestbuy.ca/*"], "js": ["content/bestbuy.js"], "run_at": "document_idle" },
+    { "matches": ["https://www.staples.ca/*"], "js": ["content/staples.js"], "run_at": "document_idle" }
   ]
 }

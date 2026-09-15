@@ -120,3 +120,47 @@ describe("findNearestInStock", () => {
     expect(api.mock.calls.length).toBeLessThanOrEqual(catalog.length);
   });
 });
+
+describe("probe options", () => {
+  // Stores 60 km apart in a line; a 5-store / 90 km probe centred on a store reaches only its neighbours.
+  const line = [];
+  for (let i = 0; i < 30; i++) line.push({ id: `l${i}`, lat: 45, lon: -75 + i * 0.76, postalCode: `P${i}` });
+  const lineUser = { lat: 45, lon: -75 };
+  const lineApi = (inStock, seen) => vi.fn(async (lat, lon, centre) => {
+    seen?.push(centre);
+    return line
+      .map((s) => ({ s, d: haversineKm({ lat, lon }, s) })).filter(({ d }) => d <= 90).sort((a, b) => a.d - b.d).slice(0, 5)
+      .map(({ s, d }) => ({ id: s.id, name: s.id, address: "", postalCode: s.postalCode, status: inStock.has(s.id) ? "available" : "out_of_stock", distanceKm: d, accessPointId: null, url: null }));
+  });
+  const lineNearby = (inStock) => line.slice(0, 5).map((s) => ({ id: s.id, status: inStock.has(s.id) ? "available" : "out_of_stock", distanceKm: haversineKm(lineUser, s) }));
+
+  it("planProbe with centroids disabled only ever returns a catalog store, nearest-first", () => {
+    // The coverage-maximizing scorer prefers l6 over l5: l5's own window wastes a slot on an
+    // already-covered neighbour, while l6's window covers more of the uncovered run.
+    const uncovered = line.slice(5).map((s) => ({ ...s, userKm: haversineKm(lineUser, s) }));
+    const c = planProbe(uncovered, line, { maxCount: 5, radiusKm: 90, centroids: false });
+    expect(c.id).toBe("l6");
+    expect(c.postalCode).toMatch(/^P\d+$/);
+    // Nearest-first invariant: the chosen centre must still be within probe range of the nearest uncovered store.
+    expect(haversineKm(c, uncovered[0])).toBeLessThanOrEqual(90);
+  });
+
+  it("passes the chosen centre (with its catalog fields) to fetchAround and honours maxCount/radius", async () => {
+    const seen = [];
+    const api = lineApi(new Set(["l12"]), seen);
+    const res = await findNearestInStock({ nearby: lineNearby(new Set()), user: lineUser, catalog: line, fetchAround: api,
+      maxCalls: 20, probe: { maxCount: 5, radiusKm: 90, centroids: false } });
+    expect(res.inStock.map((s) => s.id)).toEqual(["l12"]);
+    expect(res.complete).toBe(true);
+    for (const c of seen) { expect(c.id).toMatch(/^l\d+$/); expect(c.postalCode).toMatch(/^P\d+$/); }
+    // 5 stores per call spaced 60 km: reaching l12 from l5 takes 2-3 calls, never 20.
+    expect(api.mock.calls.length).toBeLessThanOrEqual(3);
+  });
+
+  it("keeps the default (walmart) behaviour when no options are given", async () => {
+    const api = fakeApi(new Set(["e7"]));
+    const res = await findNearestInStock({ nearby: nearby(new Set()), user: USER, catalog, fetchAround: api });
+    expect(res.inStock[0].id).toBe("e7");
+    expect(api.mock.calls[0].length).toBe(3); // lat, lon, centre
+  });
+});

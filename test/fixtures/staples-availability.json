@@ -1,0 +1,257 @@
+{
+  "success": true,
+  "availability": {
+    "3082604": {
+      "25": {
+        "addressLine": "375 University Avenue",
+        "availableqty": 0,
+        "city": "Toronto",
+        "deliveryMessage": "Ready in 2 Hours",
+        "deliveryType": "ISP",
+        "distance": "0.7",
+        "phoneNumber": "4165984818",
+        "state": "ON",
+        "thresholdqty": 50,
+        "workingHours": [
+          {
+            "openTime": "1000",
+            "closeTime": "1700",
+            "day": "SUN"
+          },
+          {
+            "openTime": "800",
+            "closeTime": "1900",
+            "day": "MON"
+          },
+          {
+            "openTime": "800",
+            "closeTime": "1900",
+            "day": "TUE"
+          },
+          {
+            "openTime": "800",
+            "closeTime": "1900",
+            "day": "WED"
+          },
+          {
+            "openTime": "800",
+            "closeTime": "1900",
+            "day": "THU"
+          },
+          {
+            "openTime": "800",
+            "closeTime": "1900",
+            "day": "FRI"
+          },
+          {
+            "openTime": "900",
+            "closeTime": "1700",
+            "day": "SAT"
+          }
+        ],
+        "yourStore": true,
+        "zipCode": "M5G 2J5"
+      },
+      "26": {
+        "addressLine": "517 Richmond St. E.",
+        "availableqty": 0,
+        "city": "Toronto",
+        "deliveryMessage": "Ready in 2 Hours",
+        "deliveryType": "ISP",
+        "distance": "1.3",
+        "phoneNumber": "4163683331",
+        "state": "ON",
+        "thresholdqty": 50,
+        "workingHours": [
+          {
+            "openTime": "1000",
+            "closeTime": "1700",
+            "day": "SUN"
+          },
+          {
+            "openTime": "900",
+            "closeTime": "1900",
+            "day": "MON"
+          },
+          {
+            "openTime": "900",
+            "closeTime": "1900",
+            "day": "TUE"
+          },
+          {
+            "openTime": "900",
+            "closeTime": "1900",
+            "day": "WED"
+          },
+          {
+            "openTime": "900",
+            "closeTime": "1900",
+            "day": "THU"
+          },
+          {
+            "openTime": "900",
+            "closeTime": "1900",
+            "day": "FRI"
+          },
+          {
+            "openTime": "900",
+            "closeTime": "1700",
+            "day": "SAT"
+          }
+        ],
+        "yourStore": false,
+        "zipCode": "M5A 1R4"
+      },
+      "70": {
+        "addressLine": "2149 Yonge Street",
+        "availableqty": 5,
+        "city": "Toronto",
+        "deliveryMessage": "Ready in 2 Hours",
+        "deliveryType": "ISP",
+        "distance": "4.3",
+        "phoneNumber": "4169614949",
+        "state": "ON",
+        "thresholdqty": 50,
+        "workingHours": [
+          {
+            "openTime": "1000",
+            "closeTime": "1700",
+            "day": "SUN"
+          },
+          {
+            "openTime": "900",
+            "closeTime": "2000",
+            "day": "MON"
+          },
+          {
+            "openTime": "900",
+            "closeTime": "2000",
+            "day": "TUE"
+          },
+          {
+            "openTime": "900",
+            "closeTime": "2000",
+            "day": "WED"
+          },
+          {
+            "openTime": "900",
+            "closeTime": "2000",
+            "day": "THU"
+          },
+          {
+            "openTime": "900",
+            "closeTime": "2000",
+            "day": "FRI"
+          },
+          {
+            "openTime": "900",
+            "closeTime": "1700",
+            "day": "SAT"
+          }
+        ],
+        "yourStore": false,
+        "zipCode": "M4S 2A7"
+      },
+      "86": {
+        "addressLine": "542 Keele Street",
+        "availableqty": 1,
+        "city": "Toronto",
+        "deliveryMessage": "Ready in 2 Hours",
+        "deliveryType": "ISP",
+        "distance": "4.5",
+        "phoneNumber": "4167622816",
+        "state": "ON",
+        "thresholdqty": 50,
+        "workingHours": [
+          {
+            "openTime": "1000",
+            "closeTime": "1700",
+            "day": "SUN"
+          },
+          {
+            "openTime": "800",
+            "closeTime": "2000",
+            "day": "MON"
+          },
+          {
+            "openTime": "800",
+            "closeTime": "2000",
+            "day": "TUE"
+          },
+          {
+            "openTime": "800",
+            "closeTime": "2000",
+            "day": "WED"
+          },
+          {
+            "openTime": "800",
+            "closeTime": "2000",
+            "day": "THU"
+          },
+          {
+            "openTime": "800",
+            "closeTime": "2000",
+            "day": "FRI"
+          },
+          {
+            "openTime": "900",
+            "closeTime": "1800",
+            "day": "SAT"
+          }
+        ],
+        "yourStore": false,
+        "zipCode": "M6N 3E2"
+      },
+      "286": {
+        "addressLine": "1000 Gerrard Street East Unit DD16",
+        "availableqty": 4,
+        "city": "Toronto",
+        "deliveryMessage": "Ready in 2 Hours",
+        "deliveryType": "ISP",
+        "distance": "2.9",
+        "phoneNumber": "4164664900",
+        "state": "ON",
+        "thresholdqty": 50,
+        "workingHours": [
+          {
+            "openTime": "1100",
+            "closeTime": "1700",
+            "day": "SUN"
+          },
+          {
+            "openTime": "900",
+            "closeTime": "1900",
+            "day": "MON"
+          },
+          {
+            "openTime": "900",
+            "closeTime": "1900",
+            "day": "TUE"
+          },
+          {
+            "openTime": "900",
+            "closeTime": "1900",
+            "day": "WED"
+          },
+          {
+            "openTime": "900",
+            "closeTime": "1900",
+            "day": "THU"
+          },
+          {
+            "openTime": "900",
+            "closeTime": "1900",
+            "day": "FRI"
+          },
+          {
+            "openTime": "900",
+            "closeTime": "1700",
+            "day": "SAT"
+          }
+        ],
+        "yourStore": false,
+        "zipCode": "M4M 3G6"
+      }
+    }
+  }
+}
