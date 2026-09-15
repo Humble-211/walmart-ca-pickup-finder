@@ -1,11 +1,12 @@
-# Walmart.ca Pickup Finder
+# Pickup Finder (walmart.ca, bestbuy.ca)
 
-Chrome extension. Enter a walmart.ca item ID (or paste the product URL) and a
-Canadian postal code; get the nearest Walmart stores with that item's pickup
-stock status, and open the product page with a store selected.
+Chrome extension. Paste a product URL from Walmart or Best Buy (Walmart item IDs
+still accepted) and a Canadian postal code; it lists the nearest stores of that
+retailer with pickup status and then searches the whole country for the nearest
+store that has the item in stock.
 
-Item IDs come in two forms, both accepted: numeric (`6000208927194`) and
-12-character alphanumeric (`1SZQHN3LOSE0`). Both appear at the end of the
+For Walmart, item IDs come in two forms, both accepted: numeric (`6000208927194`)
+and 12-character alphanumeric (`1SZQHN3LOSE0`). Both appear at the end of the
 product URL (`/en/ip/<slug>/<id>` or `/ip/<id>`).
 
 ## Build and load
@@ -18,23 +19,34 @@ npm run build      # writes dist/
 
 Chrome → `chrome://extensions` → Developer mode → Load unpacked → choose `dist/`.
 
-The extension needs a `https://www.walmart.ca` tab; it opens one if none exists.
-If walmart.ca shows its "press and hold" bot check, complete it in that tab and
-run the lookup again.
+The extension needs a tab on the retailer's site (walmart.ca or bestbuy.ca); it
+opens one if none exists. If walmart.ca shows its "press and hold" bot check,
+complete it in that tab and run the lookup again.
 
 ## How it works
 
-Requests go through a content script inside the walmart.ca tab so they carry the
-user's session. Endpoints, headers and variable templates are documented in
-`docs/walmart-ca-endpoints.md`. Design: `docs/superpowers/specs/`.
+Each retailer has an adapter in `src/retailers/<name>/`:
 
-Clicking Order pickup calls Walmart's setPickup mutation, which changes the
-selected pickup store for your whole walmart.ca session, not just the opened
-tab.
+- `urls.js` recognizes product URLs for that domain.
+- `content.js` runs on that domain and answers inventory lookups.
+
+Endpoints are documented in `docs/walmart-ca-endpoints.md` and `docs/bestbuy-ca-endpoints.md`.
+Design: `docs/superpowers/specs/`.
+
+For Walmart, clicking Order pickup calls the setPickup mutation, which changes the
+selected pickup store for your whole walmart.ca session, not just the opened tab.
+For Best Buy, store rows open the product page.
+
+## Adding a retailer
+
+Create `src/retailers/<name>/{urls.js,content.js}` (see `bestbuy/` for the smallest
+example), register `urls.js` in `src/retailers/index.js`, add the host to
+`src/manifest.json`, and document the endpoints in `docs/<name>-endpoints.md`.
+Design: `docs/superpowers/specs/`.
 
 ## When Walmart changes its API
 
-Persisted query hashes in `src/content/walmart-api.js` are tied to the site
+Persisted query hashes in `src/retailers/walmart/api.js` are tied to the site
 build. If lookups start failing with "Walmart changed its API", re-capture:
 
 ```sh
@@ -51,3 +63,10 @@ item IDs, to help spot the right requests before updating the hashes above.
 
 `tools/eval.js "<js expression>"` runs JavaScript inside that tab, useful for
 probing variables against the live endpoint.
+
+## Store lists
+
+`tools/build-store-list.mjs` (Walmart API) and `tools/build-store-list-pages.mjs`
+(Walmart store pages, not rate-limited) regenerate the store coordinate list in
+`src/retailers/walmart/stores-ca.json`. `tools/build-bestbuy-stores.mjs`
+regenerates `src/retailers/bestbuy/stores-ca.json`.

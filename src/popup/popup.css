@@ -8,6 +8,7 @@ button:disabled { background: #9bbbe0; cursor: default; }
 .error { color: #b00020; margin: 10px 0 0; white-space: pre-wrap; }
 .status { color: #555; margin: 10px 0 0; }
 .item { display: flex; gap: 10px; margin-top: 12px; padding: 8px; border: 1px solid #ddd; border-radius: 6px; }
+.item[hidden] { display: none; }
 .item img { width: 56px; height: 56px; object-fit: contain; }
 .item a { font-weight: 600; color: #111; text-decoration: none; }
 .price { color: #2a8a2a; font-weight: 600; }
