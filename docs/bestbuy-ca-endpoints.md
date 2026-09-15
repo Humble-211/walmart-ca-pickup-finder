@@ -289,3 +289,31 @@ implement the batched pass, not walmart's outward-probing `lib/stock-search.js`:
    containing a `hasInventory: true` location.
 4. Short-circuit when `pickup.status` is `"OnlineOnly"` or `"NotAvailable"` on the
    first batch — the item has no in-store pickup anywhere.
+
+## End-to-end check (2026-09-15)
+
+Ran the built extension (`dist/`) in a scratch-profile Chrome
+(`--remote-debugging-port=9223 --enable-unsafe-extension-debugging`), loaded
+via CDP `Extensions.loadUnpacked`, driving the popup with postal code
+`M5V 3L9` for all three lookups.
+
+1. DualSense controller (`.../product/x/19491570`): popup showed "Best Buy ·
+   PlayStation 5 DualSense Wireless Controller For PS5, PC, Mac & Mobile -
+   Midnight Black", $94.99. Nearby stores list had every one of the top 10
+   marked "In stock". "Nearest in stock" box listed the 3 closest (Best Buy
+   Express Union Station, 0.6 km, etc.), each with a working "Open product
+   page" button. Matches expectation.
+2. PS5 Slim (`.../product/x/19446111`): popup showed "Best Buy · PlayStation
+   5 Slim 1TB Console", $819.99. Nearby list was mixed in stock / out of
+   stock; since some nearby stores already had it, "Nearest in stock" was
+   populated immediately from the nearby set (no nationwide search needed) —
+   Best Buy Express Eaton Centre Queen at 1.4 km, etc. Matches expectation.
+3. Unknown SKU (`.../product/x/99999999`): popup error area showed exactly
+   "Item not found." Matches expectation.
+
+All three lookups matched the brief's expected outcomes. Note: unrelated to
+this check, the popup's `.item` card CSS (`display: flex`) overrides the
+`[hidden]` attribute's `display: none`, so a stale item card can remain
+visually present (though marked `hidden`) when a later lookup in the same
+popup instance fails before rendering a new item — a pre-existing
+`popup.css` issue, not introduced by this task and out of this task's scope.

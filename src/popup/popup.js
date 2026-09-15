@@ -66,9 +66,11 @@ function renderNearest(res) {
   $("nearestStores").replaceChildren(...state.inStock.slice(0, NEAREST_SHOWN).map(storeRow));
   const note = $("nearestNote");
   let text = "";
+  const label = RETAILERS[state.retailer]?.label ?? "This store";
+  const host = RETAILERS[state.retailer]?.host ?? "the site";
   if (res.noLocation) text = "Could not work out where you are relative to the store list, so only nearby stores were checked.";
-  else if (res.rateLimited) text = `walmart.ca rate-limited the search after ${res.searched} stores. Wait a minute or two, then keep searching.`;
-  else if (!state.inStock.length && res.complete) text = `No Walmart in Canada has this in stock for pickup (checked ${res.searched} stores).`;
+  else if (res.rateLimited) text = `${host} rate-limited the search after ${res.searched} stores. Wait a minute or two, then keep searching.`;
+  else if (!state.inStock.length && res.complete) text = `No ${label} in Canada has this in stock for pickup (checked ${res.searched} stores).`;
   else if (!state.inStock.length) text = `None of the ${res.searched} nearest stores have it in stock.`;
   else if (!res.complete) text = `Closest found so far (${res.searched} stores checked). A closer store may still turn up.`;
   note.textContent = text;
