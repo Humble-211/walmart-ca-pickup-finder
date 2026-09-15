@@ -1,0 +1,239 @@
+{
+ "data": {
+  "product": {
+   "id": "6000208927193",
+   "usItemId": "6000208927194",
+   "name": "Bounty Paper Towel 8 Rolls (16 Regular Rolls Equivalent)",
+   "canonicalUrl": "/en/ip/Bounty-Paper-Towel-8-Rolls-16-Regular-Rolls-Equivalent/6000208927194",
+   "availabilityStatus": "IN_STOCK",
+   "availabilityStatusV2": {
+    "display": "In stock",
+    "value": "IN_STOCK"
+   },
+   "priceInfo": {
+    "dropPrice": false,
+    "priceDisplayCodes": {
+     "clearance": null,
+     "eligibleForAssociateDiscount": true,
+     "finalCostByWeight": null,
+     "priceDisplayCondition": null,
+     "reducedPrice": null,
+     "rollback": null,
+     "submapType": null,
+     "isB2BPrice": false,
+     "pricePerUnitUom": "EA",
+     "priceDisplayType": "UNKNOWN",
+     "priceComparedToNew": false
+    },
+    "currentPrice": {
+     "price": 21.98,
+     "priceString": "$21.98",
+     "variantPriceString": "$21.98",
+     "currencyUnit": "CAD",
+     "bestValue": null,
+     "supportText": null,
+     "priceDisplay": "$21.98"
+    },
+    "basePrice": null,
+    "wasPrice": null,
+    "comparisonPrice": null,
+    "unitPrice": null,
+    "savings": null,
+    "savingsAmount": null,
+    "secondaryOfferBoost": null,
+    "shipPrice": null,
+    "isPriceReduced": false,
+    "priceReducedDisplay": null,
+    "subscriptionPrice": null,
+    "priceRange": {
+     "minPrice": null,
+     "maxPrice": null,
+     "priceString": null,
+     "currencyUnit": null,
+     "denominations": null
+    },
+    "listPrice": null,
+    "capType": null,
+    "volumePriceTiers": [],
+    "walmartFundedAmount": null,
+    "wPlusEarlyAccessPrice": null,
+    "additionalFees": {
+     "dutyFee": {
+      "price": null,
+      "priceString": null
+     },
+     "shippingAndImportFee": {
+      "price": null,
+      "priceString": null
+     },
+     "giftCardMarginAndFee": null,
+     "estimatedTotalPrice": {
+      "price": null,
+      "priceString": null
+     },
+     "countryName": null
+    },
+    "taxInfo": null
+   },
+   "imageInfo": {
+    "allImages": [
+     {
+      "id": "06C9DDF4C33575F5CB67360E68CE52FD",
+      "url": "https://i5.walmartimages.ca/asr/b7d197af-6dfa-4e8d-9b0d-299d1f914c4d.06c9ddf4c33575f5cb67360e68ce52fd.jpeg",
+      "zoomable": true
+     },
+     {
+      "id": "714DEA32F1AFD3C524FE1E7C53C60CAA",
+      "url": "https://i5.walmartimages.ca/asr/d7d0b9fe-265e-4131-aa57-8e78aeee69e9.714dea32f1afd3c524fe1e7c53c60caa.jpeg",
+      "zoomable": true
+     },
+     {
+      "id": "E263EADE05867A5F50325144FF22AA09",
+      "url": "https://i5.walmartimages.ca/asr/69e432b9-630b-4209-b7b4-43bc75f73295.e263eade05867a5f50325144ff22aa09.jpeg",
+      "zoomable": true
+     },
+     {
+      "id": "4D155C6FC92F8398FB7AB5D0B4EB167B",
+      "url": "https://i5.walmartimages.ca/asr/86f6a1f3-689f-4214-a386-55d34074597d.4d155c6fc92f8398fb7ab5d0b4eb167b.jpeg",
+      "zoomable": true
+     },
+     {
+      "id": "1E9381BF6EABCA26E516CF6D6C113225",
+      "url": "https://i5.walmartimages.ca/asr/b6c3d9d1-e091-468a-842e-792a92eddb79.1e9381bf6eabca26e516cf6d6c113225.jpeg",
+      "zoomable": true
+     },
+     {
+      "id": "6F293B8D8229A15B54DB52C2A86F2404",
+      "url": "https://i5.walmartimages.ca/asr/b10f56d1-e536-413f-bd65-349fd50214d3.6f293b8d8229a15b54db52c2a86f2404.jpeg",
+      "zoomable": true
+     },
+     {
+      "id": "7326B7DAF525BCE592DD043A23C75F9C",
+      "url": "https://i5.walmartimages.ca/asr/0be030fe-b6c4-43c7-925e-3a385e58c411.7326b7daf525bce592dd043a23c75f9c.jpeg",
+      "zoomable": true
+     },
+     {
+      "id": "0F5FE273A19021234574DAAE09863F47",
+      "url": "https://i5.walmartimages.ca/asr/ac35ce17-0b08-4358-b8d9-d5ac896714b5.0f5fe273a19021234574daae09863f47.jpeg",
+      "zoomable": true
+     },
+     {
+      "id": "4C0B9A18F3CF2162039762D3B61365E0",
+      "url": "https://i5.walmartimages.ca/asr/50196a27-763b-4a60-a069-2df00b41409f.4c0b9a18f3cf2162039762d3b61365e0.jpeg",
+      "zoomable": true
+     },
+     {
+      "id": "A96BC13255392E8D18621C9426ADEFE1",
+      "url": "https://i5.walmartimages.ca/asr/3ebd3d69-476b-4e9c-bbfd-4b52aab6d035.a96bc13255392e8d18621c9426adefe1.jpeg",
+      "zoomable": true
+     },
+     {
+      "id": "A87764C332CC19A3F17E376AE9E03E31",
+      "url": "https://i5.walmartimages.ca/asr/a8775476-a662-4f04-845f-387463c22b28.a87764c332cc19a3f17e376ae9e03e31.jpeg",
+      "zoomable": true
+     },
+     {
+      "id": "86CF9C2FF19CE2CF994BFA970E61EECB",
+      "url": "https://i5.walmartimages.ca/asr/c595aac6-998d-4906-bea9-d670ca24963a.86cf9c2ff19ce2cf994bfa970e61eecb.jpeg",
+      "zoomable": true
+     },
+     {
+      "id": "DF0EDA230DE536272F5BC4A1F83C7E9E",
+      "url": "https://i5.walmartimages.ca/asr/ae87a507-ee35-4e43-af5a-84403fc8a490.df0eda230de536272f5bc4a1f83c7e9e.jpeg",
+      "zoomable": true
+     },
+     {
+      "id": "6E97CDFE93297B6BE2956C67B76856D2",
+      "url": "https://i5.walmartimages.ca/asr/7e164ca6-b634-4c6a-8c93-2a09049b77f0.6e97cdfe93297b6be2956c67b76856d2.jpeg",
+      "zoomable": true
+     },
+     {
+      "id": "23ECCCEE13C3B989E4DC5764AD8BB5FF",
+      "url": "https://i5.walmartimages.ca/asr/35bf6d7d-19d2-4686-bd7f-017445133a0c.23ecccee13c3b989e4dc5764ad8bb5ff.jpeg",
+      "zoomable": true
+     },
+     {
+      "id": "26D8CAF9BF6695410F5052FC822947DA",
+      "url": "https://i5.walmartimages.ca/asr/7e7396ab-b588-4f33-be08-22cb9bcb442e.26d8caf9bf6695410f5052fc822947da.jpeg",
+      "zoomable": true
+     },
+     {
+      "id": "EF9DA2D2A8261CE3B859AB1F0178AE45",
+      "url": "https://i5.walmartimages.ca/asr/4bbfffe9-1525-4313-9c3a-1e2eb38d7e8e.ef9da2d2a8261ce3b859ab1f0178ae45.jpeg",
+      "zoomable": true
+     },
+     {
+      "id": "11C0DEFB215CF31E77D6F293856BCE8C",
+      "url": "https://i5.walmartimages.ca/asr/559ceb95-8952-416c-8f34-9d0dd1d923e3.11c0defb215cf31e77d6f293856bce8c.jpeg",
+      "zoomable": true
+     },
+     {
+      "id": "ABF41BAC6838FC0A10817C8DFBEACA50",
+      "url": "https://i5.walmartimages.ca/asr/5ccb614b-eab4-4569-8638-5bf7e7b92c4a.abf41bac6838fc0a10817c8dfbeaca50.jpeg",
+      "zoomable": true
+     },
+     {
+      "id": "0FADB2AFDD88246F13DBBCCE021EC610",
+      "url": "https://i5.walmartimages.ca/asr/03d5d99f-5c57-4fe9-843b-3f397811da17.0fadb2afdd88246f13dbbcce021ec610.jpeg",
+      "zoomable": true
+     },
+     {
+      "id": "0DAB08E94CDB95E9C33AF986243950C9",
+      "url": "https://i5.walmartimages.ca/asr/23c0d840-d4c5-4c87-8372-109091850ead.0dab08e94cdb95e9c33af986243950c9.jpeg",
+      "zoomable": true
+     },
+     {
+      "id": "D8A6324BF7FFC623F9566F708DC1F0DF",
+      "url": "https://i5.walmartimages.ca/asr/e1cdee3a-2fd6-4d4d-8834-df37fdf2b270.d8a6324bf7ffc623f9566f708dc1f0df.jpeg",
+      "zoomable": true
+     },
+     {
+      "id": "7F1A6645FAA49F6AD0E50855B9245C90",
+      "url": "https://i5.walmartimages.ca/asr/c596c21d-adb5-469f-a94d-70d05d848586.7f1a6645faa49f6ad0e50855b9245c90.jpeg",
+      "zoomable": true
+     },
+     {
+      "id": "936E2B68B30885E9153502CDA530EC90",
+      "url": "https://i5.walmartimages.ca/asr/e5094a72-c096-4ef3-9beb-245af4fa68a6.936e2b68b30885e9153502cda530ec90.jpeg",
+      "zoomable": true
+     }
+    ],
+    "thumbnailUrl": "https://i5.walmartimages.ca/asr/b7d197af-6dfa-4e8d-9b0d-299d1f914c4d.06c9ddf4c33575f5cb67360e68ce52fd.jpeg",
+    "thumbnailAspectRatio": null
+   },
+   "pickupOption": {
+    "slaTier": null,
+    "accessTypes": [
+     "PICKUP_CURBSIDE",
+     "PICKUP_INSTORE"
+    ],
+    "availabilityStatus": "AVAILABLE",
+    "storeName": null,
+    "storeId": null
+   },
+   "availableFulfillmentOptions": [
+    "SCHEDULED_PICKUP",
+    "UNSCHEDULED_PICKUP",
+    "SCHEDULED_DELIVERY",
+    "UNSCHEDULED_DELIVERY"
+   ],
+   "fulfillmentType": "FC",
+   "location": {
+    "postalCode": "M1P 4P5",
+    "stateOrProvinceCode": "ON",
+    "city": "Toronto",
+    "storeIds": [
+     "3635"
+    ],
+    "addressId": null,
+    "intent": "PICKUP",
+    "mpPickupLocation": null,
+    "pickupLocation": {
+     "storeId": "3635",
+     "accessPointId": null,
+     "accessType": null
+    }
+   }
+  }
+ }
+}

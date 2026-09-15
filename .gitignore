@@ -1,0 +1,4 @@
+node_modules/
+walmart-capture.jsonl
+capture.log
+*.har
