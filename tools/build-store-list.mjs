@@ -1,4 +1,4 @@
-// Dev-only. Builds src/lib/stores-ca.json (every walmart.ca pickup node with
+// Dev-only. Builds src/retailers/walmart/stores-ca.json (every walmart.ca pickup node with
 // coordinates) by walking nearByNodes outward from seed cities. Needs a Chrome
 // started with --remote-debugging-port=9222 that has a walmart.ca tab open.
 //   node tools/build-store-list.mjs
@@ -9,7 +9,7 @@ import { dirname, join } from "node:path";
 import { tmpdir } from "node:os";
 import { fileURLToPath } from "node:url";
 
-const OUT = join(dirname(fileURLToPath(import.meta.url)), "..", "src", "lib", "stores-ca.json");
+const OUT = join(dirname(fileURLToPath(import.meta.url)), "..", "src", "retailers", "walmart", "stores-ca.json");
 const STATE = join(tmpdir(), "walmart-store-list-state.json");
 const HASH = "d26e41479a06dc27775a042b88b74ea8b5b75d3a670bcafd080eb7a4e2bdf66f";
 const RADIUS_KM = 100, MAX_COUNT = 50, CALL_GAP_MS = 25000, BACKOFF_MS = 10 * 60 * 1000;

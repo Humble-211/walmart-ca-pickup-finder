@@ -1,10 +1,10 @@
 // Runs on https://www.walmart.ca/*. Answers messages from the background worker.
-import { getItem, findStores, findStoresAround, selectStore } from "./walmart-api.js";
-import { rankStores } from "../lib/rank-stores.js";
-import { locateUser } from "../lib/geo.js";
-import { findNearestInStock } from "../lib/stock-search.js";
-import { toErrorResponse } from "../lib/errors.js";
-import catalog from "../lib/stores-ca.json";
+import { getItem, findStores, findStoresAround, selectStore } from "./api.js";
+import { rankStores } from "../../lib/rank-stores.js";
+import { locateUser } from "../../lib/geo.js";
+import { findNearestInStock } from "../../lib/stock-search.js";
+import { toErrorResponse } from "../../lib/errors.js";
+import catalog from "./stores-ca.json";
 
 const MAX_STORES = 10;
 // walmart.ca rate-limits at roughly 25 calls per 5 minutes per browser, so one

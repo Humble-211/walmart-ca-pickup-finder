@@ -1,4 +1,4 @@
-import { WalmartApiError, apiChanged } from "./errors.js";
+import { WalmartApiError, apiChanged } from "../../lib/errors.js";
 
 const STATUS = { IN_STOCK: "available", OUT_OF_STOCK: "out_of_stock" };
 

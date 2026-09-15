@@ -1,4 +1,4 @@
-// Dev-only. Completes src/lib/stores-ca.json by crawling walmart.ca store pages
+// Dev-only. Completes src/retailers/walmart/stores-ca.json by crawling walmart.ca store pages
 // (/en/store/<id>), which carry the store's coordinates in JSON-LD and link to
 // the 3 nearest stores. Page fetches are not subject to the nearByNodes rate
 // limit, so this is the fast way to finish a list started by build-store-list.mjs
@@ -9,7 +9,7 @@ import { writeFileSync, readFileSync, existsSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
-const OUT = join(dirname(fileURLToPath(import.meta.url)), "..", "src", "lib", "stores-ca.json");
+const OUT = join(dirname(fileURLToPath(import.meta.url)), "..", "src", "retailers", "walmart", "stores-ca.json");
 const GAP_MS = 700;
 const SEED_IDS = ["3106", "1004", "3105", "1803"];
 

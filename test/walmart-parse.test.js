@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
-import { parseStores, parseItem } from "../src/lib/parse-walmart.js";
+import { parseStores, parseItem } from "../src/retailers/walmart/parse.js";
 import { WalmartApiError } from "../src/lib/errors.js";
 
 const nearBy = JSON.parse(readFileSync(new URL("./fixtures/nearByNodes.json", import.meta.url), "utf8"));

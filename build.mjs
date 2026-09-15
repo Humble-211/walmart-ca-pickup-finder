@@ -1,12 +1,16 @@
 import { build } from "esbuild";
-import { cpSync, mkdirSync, rmSync } from "node:fs";
+import { cpSync, mkdirSync, readdirSync, rmSync } from "node:fs";
 
 rmSync("dist", { recursive: true, force: true });
 mkdirSync("dist/popup", { recursive: true });
 
+const retailers = readdirSync("src/retailers", { withFileTypes: true })
+  .filter((d) => d.isDirectory())
+  .map((d) => d.name);
+
 await build({
   entryPoints: {
-    "content": "src/content/index.js",
+    ...Object.fromEntries(retailers.map((r) => [`content/${r}`, `src/retailers/${r}/content.js`])),
     "background": "src/background.js",
     "popup/popup": "src/popup/popup.js",
   },

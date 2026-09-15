@@ -8,6 +8,6 @@
   "background": { "service_worker": "background.js" },
   "action": { "default_popup": "popup/popup.html", "default_title": "Walmart.ca Pickup Finder" },
   "content_scripts": [
-    { "matches": ["https://www.walmart.ca/*"], "js": ["content.js"], "run_at": "document_idle" }
+    { "matches": ["https://www.walmart.ca/*"], "js": ["content/walmart.js"], "run_at": "document_idle" }
   ]
 }

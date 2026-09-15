@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs";
 import {
   buildHeaders, buildNearByNodesUrl, buildItemUrl, buildSetPickupBody,
   getItem, findStores, findStoresAround, selectStore,
-} from "../src/content/walmart-api.js";
+} from "../src/retailers/walmart/api.js";
 
 const nearBy = readFileSync(new URL("./fixtures/nearByNodes.json", import.meta.url), "utf8");
 const item = readFileSync(new URL("./fixtures/itemById.json", import.meta.url), "utf8");
