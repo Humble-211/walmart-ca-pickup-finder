@@ -54,3 +54,17 @@ export function parseStoreDetails(json) {
     .filter((s) => s.id)
     .sort((a, b) => (a.distanceKm ?? Infinity) - (b.distanceKm ?? Infinity));
 }
+
+// fulfillment-options response -> ship-to-home for the postal code sent. Status strings seen:
+// "AVAILABLE", "POSTAL_CODE_NOT_SET"; anything with OUT_OF_STOCK / UNAVAILABLE counts as out of stock.
+export function parseDelivery(json) {
+  const s = json?.fulfillment?.shipping;
+  if (!s || typeof s !== "object") throw apiChanged(JSON.stringify(json));
+  const status = String(s.status ?? "");
+  const qty = Number(s.quantity);
+  return {
+    status: status === "AVAILABLE" ? "available" : /OUT_OF_STOCK|UNAVAILABLE|NOT_AVAILABLE/i.test(status) ? "out_of_stock" : "unknown",
+    quantity: Number.isFinite(qty) ? qty : null,
+    eta: typeof s.estimatedDeliveryTime === "string" && s.estimatedDeliveryTime.trim() ? s.estimatedDeliveryTime.trim() : null,
+  };
+}

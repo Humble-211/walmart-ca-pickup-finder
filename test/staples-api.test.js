@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { readFileSync } from "node:fs";
-import { getItem, getAvailability, buildProductUrl, buildAvailabilityBody, AVAILABILITY_URL } from "../src/retailers/staples/api.js";
+import { getItem, getAvailability, getDelivery, buildProductUrl, buildAvailabilityBody, buildDeliveryBody, AVAILABILITY_URL } from "../src/retailers/staples/api.js";
 
 const fx = (n) => readFileSync(new URL(`./fixtures/${n}`, import.meta.url), "utf8");
 const jsonResponse = (body, status = 200) => new Response(body, { status, headers: { "content-type": "application/json" } });
@@ -15,6 +15,20 @@ describe("staples request builders", () => {
       locale: "en-CA", postal_code: "M5V 3L9", items: [{ sku: "3082604", quantity: 1000 }], location: "PickInStore",
     });
     expect(AVAILABILITY_URL).toBe("https://api.staples.ca/ecommerce/inventory/v2.0/request");
+  });
+});
+
+describe("staples delivery", () => {
+  it("buildDeliveryBody sends the ship-to-home body", () => {
+    expect(buildDeliveryBody("3082604", "M5V 3L9")).toEqual({ locale: "en-CA", postal_code: "M5V 3L9", items: [{ sku: "3082604", quantity: 1, is_dropship: true }], location: "M5V 3L9" });
+  });
+  it("getDelivery POSTs the ship-to-home body and parses the row", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(jsonResponse(fx("staples-delivery.json")));
+    vi.stubGlobal("fetch", fetchMock);
+    try {
+      expect(await getDelivery("3082604", "M5V 3L9")).toEqual({ status: "available", quantity: 30, eta: "arrives Sep 22" });
+      expect(JSON.parse(fetchMock.mock.calls[0][1].body)).toEqual(buildDeliveryBody("3082604", "M5V 3L9"));
+    } finally { vi.unstubAllGlobals(); }
   });
 });
 

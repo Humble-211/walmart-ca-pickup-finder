@@ -2,7 +2,7 @@
 // public x-apikey and must carry the site cookies (credentials: "include"): Akamai
 // answers cookie-less requests with a 403 HTML page. Endpoint details:
 // docs/shoppers-ca-endpoints.md
-import { parseProduct, parseStoreDetails } from "./parse.js";
+import { parseProduct, parseStoreDetails, parseDelivery } from "./parse.js";
 import { WalmartApiError, apiChanged } from "../../lib/errors.js";
 
 const API = "https://api.shoppersdrugmart.ca/beauty/v2/shoppersdrugmart";
@@ -11,6 +11,11 @@ export const STORE_DETAILS_URL = `${API}/store-locator/store-details?lang=en`;
 
 export function buildProductUrl(code) {
   return `${API}/product/variantProduct/${encodeURIComponent(String(code))}/details`;
+}
+
+// The postal code goes without its space, as the site sends it.
+export function buildDeliveryUrl(code, postalCode) {
+  return `${API}/product/${encodeURIComponent(String(code))}/fulfillment-options?${new URLSearchParams({ storeId: "", postalCode: String(postalCode).replace(/\s+/g, "") })}`;
 }
 
 export function buildBaseProductUrl(code) {
@@ -79,4 +84,9 @@ export async function getStoreStock(code, centre, inStockOnly = false) {
     body: JSON.stringify(buildStoreDetailsBody(code, centre, inStockOnly)),
   });
   return parseStoreDetails(json);
+}
+
+// Ship-to-home availability, quantity and delivery estimate for the variant code at postalCode.
+export async function getDelivery(code, postalCode) {
+  return parseDelivery(await request(buildDeliveryUrl(code, postalCode)));
 }

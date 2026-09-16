@@ -64,3 +64,20 @@ describe("bestbuy fetching", () => {
     await expect(getItem("1")).rejects.toMatchObject({ code: "api_changed" });
   });
 });
+
+describe("availability postal code", () => {
+  it("adds postalCode to the availability url only when given", () => {
+    expect(buildAvailabilityUrl("19446111", ["927", "196"], "M5V 3L9")).toContain("postalCode=M5V+3L9");
+    expect(buildAvailabilityUrl("19446111", ["927", "196"])).not.toContain("postalCode");
+  });
+  it("getAvailability returns the delivery summary next to the statuses", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(new Response(readFileSync(new URL("./fixtures/bestbuy-availability.json", import.meta.url), "utf8"), { status: 200, headers: { "content-type": "application/json" } }));
+    vi.stubGlobal("fetch", fetchMock);
+    try {
+      const res = await getAvailability("19446111", ["927"], "M5V 3L9");
+      expect(res.delivery).toEqual({ status: "available", quantity: 1394, eta: "by Sep 16" });
+      expect(res.statuses.size).toBeGreaterThan(0);
+      expect(fetchMock.mock.calls[0][0]).toContain("postalCode=M5V+3L9");
+    } finally { vi.unstubAllGlobals(); }
+  });
+});

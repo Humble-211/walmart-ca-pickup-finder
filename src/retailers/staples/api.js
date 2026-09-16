@@ -2,7 +2,7 @@
 // headers beyond Content-Type are needed; the inventory endpoint's CORS rejects
 // credentialed requests, so every call uses credentials: "omit".
 // Endpoint details: docs/staples-ca-endpoints.md
-import { parseProduct, parseAvailability } from "./parse.js";
+import { parseProduct, parseAvailability, parseDelivery } from "./parse.js";
 import { WalmartApiError, apiChanged } from "../../lib/errors.js";
 
 const ORIGIN = "https://www.staples.ca";
@@ -14,6 +14,11 @@ export function buildProductUrl(handle) {
 
 export function buildAvailabilityBody(sku, postalCode) {
   return { locale: "en-CA", postal_code: postalCode, items: [{ sku: String(sku), quantity: 1000 }], location: "PickInStore" };
+}
+
+// Same endpoint in ship-to-home mode: a postal code as `location` (docs §3 "Other modes").
+export function buildDeliveryBody(sku, postalCode) {
+  return { locale: "en-CA", postal_code: postalCode, items: [{ sku: String(sku), quantity: 1, is_dropship: true }], location: postalCode };
 }
 
 async function request(url, init = {}) {
@@ -45,4 +50,14 @@ export async function getAvailability(sku, postalCode) {
     body: JSON.stringify(buildAvailabilityBody(sku, postalCode)),
   });
   return parseAvailability(json, sku);
+}
+
+// Ship-to-home availability and delivery window for sku at postalCode.
+export async function getDelivery(sku, postalCode) {
+  const json = await request(AVAILABILITY_URL, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(buildDeliveryBody(sku, postalCode)),
+  });
+  return parseDelivery(json, sku);
 }

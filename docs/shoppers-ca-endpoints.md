@@ -201,7 +201,30 @@ The adapter models the probe as `{ maxCount: 10, radiusKm: 20 }`. 20 is the
 largest distance seen to return a store; if the true cutoff is a bit larger the
 prober just covers slightly less per call than it could.
 
-## 4. Store list
+## 3b. Ship-to-home (delivery) for a postal code
+
+```
+GET https://api.shoppersdrugmart.ca/beauty/v2/shoppersdrugmart/product/<variantCode>/fulfillment-options?storeId=&postalCode=M5V3L9
+```
+
+Same api key and cookies as everything else here. The postal code goes **without its
+space**, as the site sends it. Response (fixture `test/fixtures/shoppers-delivery.json`):
+
+```
+fulfillment.shipping.status                 "AVAILABLE" | "POSTAL_CODE_NOT_SET"
+fulfillment.shipping.quantity               56          (units available to ship)
+fulfillment.shipping.estimatedDeliveryTime  "Estimated delivery in 1-3 business days"
+fulfillment.pickup.{status,quantity,estimatedPickupTime}   only with a storeId
+fulfillment.store.{status,quantity,address}                only with a storeId
+```
+
+The estimate really does follow the postal code (same product: "1-3 business days" for
+M5V 3L9, "10-16 business days" for Y1A 1A1), so it is worth the extra call. Without a
+`postalCode` the shipping block is `{"status":"POSTAL_CODE_NOT_SET"}`, which
+`parseDelivery` maps to unknown. `storeId=` stays empty: the pickup numbers come from
+§3, which covers ten stores at once instead of one.
+
+
 
 The API itself has no store-list endpoint (`…/store-locator/stores`,
 `…/stores/<id>`, `/api/v1/stores/<id>` all 404). The store list comes from the
@@ -249,10 +272,9 @@ in the source (`NBW 3T5`, `K7V OB4`) and are kept as-is.
 
 ## 6. Other calls seen (not used)
 
-- `GET …/product/<variantCode>/fulfillment-options?storeId=<id>&postalCode=<pc>`
-  → `{fulfillment: {shipping: {status, quantity, estimatedDeliveryTime},
-  pickup: {status: "AVAILABLE", quantity: 3, estimatedPickupTime}, store:
-  {status, quantity, address}}}` — one store at a time, needs the store id.
+- `GET …/product/<variantCode>/fulfillment-options` **with** a `storeId` adds
+  `fulfillment.pickup` / `fulfillment.store` for that one store. The extension calls
+  it without a store id, for delivery only (§3b); per-store pickup comes from §3.
 - `POST https://prod-sdm-bff.api.loblaw.digital/beauty/v2/sdui/views/sdm-pdp-hybrid-page`
   (`x-loblaw-tenant-id: SHOPPERS_DRUG_MART`, same api key) — server-driven UI
   layout for the page, no stock.

@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { readFileSync } from "node:fs";
-import { getItem, getStoreStock, buildProductUrl, buildBaseProductUrl, buildStoreDetailsBody, STORE_DETAILS_URL, API_KEY, RETRY } from "../src/retailers/shoppers/api.js";
+import { getItem, getStoreStock, getDelivery, buildProductUrl, buildBaseProductUrl, buildDeliveryUrl, buildStoreDetailsBody, STORE_DETAILS_URL, API_KEY, RETRY } from "../src/retailers/shoppers/api.js";
 
 const fx = (n) => readFileSync(new URL(`./fixtures/${n}`, import.meta.url), "utf8");
 const jsonResponse = (body, status = 200) => new Response(body, { status, headers: { "content-type": "application/json" } });
@@ -12,6 +12,9 @@ describe("shoppers request builders", () => {
     expect(buildProductUrl(CODE)).toBe(`https://api.shoppersdrugmart.ca/beauty/v2/shoppersdrugmart/product/variantProduct/${CODE}/details`);
     expect(buildBaseProductUrl(CODE)).toBe(`https://api.shoppersdrugmart.ca/beauty/v2/shoppersdrugmart/product/baseProduct/BB_${CODE}/details`);
     expect(STORE_DETAILS_URL).toBe("https://api.shoppersdrugmart.ca/beauty/v2/shoppersdrugmart/store-locator/store-details?lang=en");
+  });
+  it("builds the fulfillment-options url with the postal code unspaced", () => {
+    expect(buildDeliveryUrl(CODE, "M5V 3L9")).toBe(`https://api.shoppersdrugmart.ca/beauty/v2/shoppersdrugmart/product/${CODE}/fulfillment-options?storeId=&postalCode=M5V3L9`);
   });
   it("builds the documented store-details body", () => {
     expect(buildStoreDetailsBody(CODE, CENTRE)).toEqual({ latitude: 43.6416, longitude: -79.387, productId: CODE, inStock: false, storeType: 1 });
@@ -58,6 +61,11 @@ describe("shoppers fetching", () => {
     expect(init.credentials).toBe("include");
     expect(init.headers["content-type"]).toBe("application/json");
     expect(JSON.parse(init.body)).toEqual(buildStoreDetailsBody(CODE, CENTRE, true));
+  });
+  it("getDelivery fetches the fulfillment options and parses the shipping block", async () => {
+    fetchMock.mockResolvedValue(jsonResponse(fx("shoppers-delivery.json")));
+    expect(await getDelivery(CODE, "M5V 3L9")).toEqual({ status: "available", quantity: 56, eta: "Estimated delivery in 1-3 business days" });
+    expect(fetchMock.mock.calls[0][0]).toBe(buildDeliveryUrl(CODE, "M5V 3L9"));
   });
   it("getStoreStock returns [] on a 204", async () => {
     fetchMock.mockResolvedValue(new Response(null, { status: 204 }));

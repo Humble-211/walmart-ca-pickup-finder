@@ -242,7 +242,35 @@ availability[]: {sku, quantity, is_dropship, available_quantity: 103,
                  min_delivery_date, max_delivery_date}
 ```
 
-## 4. Store list
+## 3b. Ship-to-home (delivery) for a postal code
+
+The same inventory endpoint answers delivery when `location` carries a postal code
+instead of `"PickInStore"` and the item is marked `is_dropship`:
+
+```
+POST https://api.staples.ca/ecommerce/inventory/v2.0/request
+{"locale":"en-CA","postal_code":"M5V 3L9",
+ "items":[{"sku":"3082604","quantity":1,"is_dropship":true}],"location":"M5V 3L9"}
+```
+
+Response (fixture `test/fixtures/staples-delivery.json`) is a **flat array**, one row
+per requested sku, with no store breakdown:
+
+```
+availability[]:
+  sku                 "3082604"        ("" when the sku is unknown)
+  available_quantity  30               <- units available to ship (0 for an unknown sku)
+  min_delivery_date   "2026-09-22T09:00:00"     (local time, no zone)
+  max_delivery_date   "2026-09-22T17:00:00"     (null for an unknown sku)
+  quantity, is_dropship
+```
+
+Verified from bare Node for three skus and two postal codes; the delivery dates do
+change with the postal code (`3082604`: Sep 22 for M5V 3L9, Sep 17 for Y1A 1A1).
+`parseDelivery` maps `available_quantity > 0` to available and formats the window as
+"arrives Sep 22" (one date when both ends fall on the same day).
+
+
 
 ```
 GET https://api.stores.staples.ca/api/locations?addr=M5V%203L9&rnum=10&rad=25&country=CA

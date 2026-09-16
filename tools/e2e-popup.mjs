@@ -51,6 +51,7 @@ try {
   const snapshot = () => evalIn(`JSON.stringify({ error: document.getElementById("error").textContent, status: document.getElementById("status").textContent,
     item: document.getElementById("itemName").textContent, price: document.getElementById("itemPrice").textContent,
     notice: document.getElementById("itemNotice").hidden ? "" : document.getElementById("itemNotice").textContent,
+    delivery: document.getElementById("itemDelivery").hidden ? "" : document.getElementById("itemDelivery").textContent,
     nearby: ${text("#stores .store")}, nearest: ${text("#nearestStores .store")}, note: document.getElementById("nearestNote").textContent,
     searchMore: !document.getElementById("searchMore").hidden, busy: document.getElementById("submit").disabled })`);
   for (const { url, postal } of scenarios) {

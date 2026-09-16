@@ -1,5 +1,6 @@
 // Pure parsers for staples.ca responses. Field names: docs/staples-ca-endpoints.md §2-3
 import { apiChanged } from "../../lib/errors.js";
+import { dateRange } from "../../lib/dates.js";
 
 const ORIGIN = "https://www.staples.ca";
 
@@ -41,4 +42,20 @@ export function parseAvailability(json, sku) {
       };
     })
     .sort((a, b) => (a.distanceKm ?? Infinity) - (b.distanceKm ?? Infinity));
+}
+
+// Inventory v2 ship-to-home response (location = postal code) -> delivery summary for `sku`.
+// availability[] is a flat list, one row per sku; an unknown sku comes back with sku "" and 0.
+export function parseDelivery(json, sku) {
+  const rows = json?.availability;
+  if (!Array.isArray(rows)) throw apiChanged(JSON.stringify(json));
+  const row = rows.find((r) => String(r?.sku) === String(sku)) ?? rows[0];
+  if (!row) return null;
+  const qty = Number(row.available_quantity);
+  const when = dateRange(row.min_delivery_date, row.max_delivery_date);
+  return {
+    status: Number.isFinite(qty) ? (qty > 0 ? "available" : "out_of_stock") : "unknown",
+    quantity: Number.isFinite(qty) ? qty : null,
+    eta: when ? `arrives ${when}` : null,
+  };
 }

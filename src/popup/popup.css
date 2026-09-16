@@ -13,6 +13,9 @@ button:disabled { background: #9bbbe0; cursor: default; }
 .item a { font-weight: 600; color: #111; text-decoration: none; }
 .price { color: #2a8a2a; font-weight: 600; }
 .notice { color: #b00020; margin-top: 4px; }
+.delivery { color: #555; margin-top: 2px; }
+.delivery.available { color: #1b6e2a; }
+.delivery.out_of_stock { color: #a11; }
 .stores { list-style: none; margin: 10px 0 0; padding: 0; display: grid; gap: 6px; }
 .store { display: flex; justify-content: space-between; gap: 8px; padding: 8px; border: 1px solid #ddd; border-radius: 6px; }
 .store-name { font-weight: 600; }
