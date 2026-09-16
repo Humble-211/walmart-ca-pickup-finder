@@ -30,12 +30,12 @@ async function handle(msg) {
     case "ping":
       return { ok: true };
     case "lookup": {
-      const user = locate(msg.postalCode);
       const item = await api.getItem(msg.itemId);
       resolved.set(msg.itemId, item.id);
       if (msg.mode === "delivery") {
         return { ok: true, item: { ...item, delivery: await api.getDelivery(item.id, msg.postalCode) }, stores: [], complete: true };
       }
+      const user = locate(msg.postalCode);
       const [stores, delivery] = await Promise.all([api.getStoreStock(item.id, user, false), api.getDelivery(item.id, msg.postalCode)]);
       return { ok: true, item: { ...item, delivery }, stores: stores.map((s) => ({ ...s, url: item.url })) };
     }

@@ -70,7 +70,7 @@ export async function handleMessage(msg, deps = {}) {
         const stores = api.rankStores(await api.findDeliveryStores(msg.postalCode, msg.itemId, DELIVERY_STORES_WIDE));
         return {
           ok: true, inStock: stores.filter((s) => s.status === "available"), searched: stores.length,
-          checkedIds: stores.map((s) => s.id), complete: true, rateLimited: false,
+          checkedIds: stores.map((s) => s.id), complete: true, rateLimited: false, delivery: deliverySummary(stores),
         };
       }
       if (!Array.isArray(msg.nearby)) return { ok: false, code: "unknown", error: "findInStock needs the nearby store list." };

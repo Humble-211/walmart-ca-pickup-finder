@@ -191,4 +191,32 @@ describe("delivery mode jobs", () => {
     await flush(); await flush();
     expect(forward.mock.calls.map((c) => c[0].mode)).toEqual(["pickup", "pickup"]);
   });
+
+  it("updates job.item.delivery when the widening search reports a fresher delivery summary", async () => {
+    const storage = fakeStorage();
+    const forward = vi.fn(async (msg) => msg.type === "lookup"
+      ? { ok: true, item: { ...item, delivery: { status: "out_of_stock", quantity: null, eta: null } }, stores: [store("a", "out_of_stock", 1)], complete: false }
+      : { ok: true, inStock: [store("b", "available", 9)], searched: 50, checkedIds: ["a", "b"], complete: true, delivery: { status: "available", quantity: null, eta: null } });
+    const jobs = createJobs({ forward, storage });
+    await jobs.start({ retailer: "walmart", itemId: "1", postalCode: "M5V 3L9", mode: "delivery" });
+    await flush(); await flush();
+    expect((await jobs.get()).item.delivery).toEqual({ status: "out_of_stock", quantity: null, eta: null });
+    await jobs.continueSearch();
+    await flush(); await flush();
+    const job = await jobs.get();
+    expect(job.item.delivery).toEqual({ status: "available", quantity: null, eta: null });
+  });
+
+  it("leaves job.item untouched when a pickup search's findInStock carries no delivery field", async () => {
+    const storage = fakeStorage();
+    const forward = vi.fn(async (msg) => msg.type === "lookup"
+      ? { ok: true, item, stores: [store("a", "out_of_stock", 1)] }
+      : { ok: true, inStock: [store("z", "available", 40)], searched: 12, checkedIds: ["a", "z"], complete: true, rateLimited: false });
+    const jobs = createJobs({ forward, storage });
+    await jobs.start({ retailer: "staples", itemId: "1", postalCode: "M5V 3L9" });
+    await flush(); await flush();
+    const job = await jobs.get();
+    expect(job.phase).toBe("done");
+    expect(job.item).toEqual(item); // no `delivery` field appears anywhere on it
+  });
 });

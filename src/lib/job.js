@@ -73,6 +73,7 @@ export function createJobs({ forward, storage, now = Date.now }) {
     }
     job.inStock = mergeInStock(job.inStock, res.inStock ?? []);
     job.checkedIds = res.checkedIds ?? job.checkedIds;
+    if (res.delivery) job.item = { ...job.item, delivery: res.delivery };
     job.search = { searched: res.searched ?? 0, remaining: 0, complete: Boolean(res.complete), rateLimited: Boolean(res.rateLimited), noLocation: Boolean(res.noLocation) };
     job.phase = "done";
     return save(job);

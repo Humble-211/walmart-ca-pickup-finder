@@ -16,6 +16,7 @@ const NEAREST_SHOWN = 3;
 
 let job = null; // the last rendered job, for the store-row buttons
 let jobSuppliedMode = false; // true once a rendered job has set the radio, so the async storage restore can't clobber it
+let lastRenderedJobId = null; // set the radio from a job only on its first render, so a progress-tick re-render can't snap it back
 
 // The store labels the registry supports, for the label hint and the unsupported-site message.
 function storesList() {
@@ -40,7 +41,7 @@ function renderItem(item) {
   $("itemName").textContent = `${RETAILERS[item.retailer]?.label ?? ""} · ${item.name}`.replace(/^ · /, "");
   $("itemName").href = item.url;
   $("itemPrice").textContent = item.priceString;
-  $("itemNotice").hidden = item.pickupEligible;
+  $("itemNotice").hidden = job?.mode === "delivery" || item.pickupEligible;
   renderDelivery(item.delivery, job?.postalCode);
 }
 
@@ -77,7 +78,10 @@ function storeRow(s) {
 function statusText(j) {
   const label = RETAILERS[j.retailer]?.label ?? "pickup";
   if (j.phase === "lookup") return "Looking up…";
-  if (j.phase === "searching") return j.search ? `Searching farther stores… ${j.search.searched} checked, ${j.search.remaining} to go` : "Searching farther stores…";
+  if (j.phase === "searching") {
+    if (j.mode === "delivery") return "Checking more delivery locations…";
+    return j.search ? `Searching farther stores… ${j.search.searched} checked, ${j.search.remaining} to go` : "Searching farther stores…";
+  }
   if (j.mode === "delivery") return deliveryModeStatus(j.item, j.postalCode);
   if (j.item && !j.nearby.length) {
     if (j.item.pickupEligible === false) return "This item is not offered for store pickup."; // the item notice stays visible: it is the reason
@@ -113,7 +117,8 @@ function nearestNote(j) {
 
 function render(j) {
   job = j;
-  if (j?.mode) { setMode(j.mode); jobSuppliedMode = true; } // a job started by another popup wins over the remembered choice, whichever resolves first
+  if (j?.mode && j.id !== lastRenderedJobId) { setMode(j.mode); jobSuppliedMode = true; } // a job started by another popup wins over the remembered choice, whichever resolves first; a re-render of the same job (e.g. a progress tick) must not snap the radio back
+  if (j) lastRenderedJobId = j.id;
   const delivery = j?.mode === "delivery";
   const busy = j?.phase === "lookup" || j?.phase === "searching";
   $("submit").disabled = busy;
@@ -130,7 +135,8 @@ function render(j) {
   $("stores").replaceChildren(...(delivery ? [] : j.nearby.map(storeRow)));
   $("nearbyHeading").hidden = delivery || !j.nearby.length;
   // Per-store availability outranks the buy box's pickup flag (a marketplace offer can hide it).
-  if (j.nearby.some((s) => s.status !== "unknown")) $("itemNotice").hidden = true;
+  // A known delivery-node status says nothing about pickup, so it must not hide the pickup notice.
+  if (!delivery && j.nearby.some((s) => s.status !== "unknown")) $("itemNotice").hidden = true;
   const showNearest = delivery
     // also when the list is empty but can still be widened: "Keep searching farther" lives in this box
     ? j.inStock.length > 0 || j.search?.complete === false

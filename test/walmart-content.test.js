@@ -28,6 +28,7 @@ describe("walmart delivery mode", () => {
     expect(res.inStock.map((s) => s.id)).toEqual(["1"]);
     expect(res.complete).toBe(true);
     expect(res.checkedIds).toEqual(["1", "2"]);
+    expect(res.delivery).toEqual({ status: "available", quantity: null, eta: null }); // reflects the widened node list, not the stale first-10 answer
   });
 
   it("leaves pickup mode alone", async () => {
