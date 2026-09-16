@@ -87,9 +87,12 @@ checks start working; silence therefore means the monitor is running and nothing
 has changed.
 
 A check has to come from a tab on the retailer's own site, so the monitor opens
-one background tab per watched retailer and leaves it there. It never reloads a
-retailer tab you opened yourself, only the ones it opened; a search you start
-from the popup still reloads a stale tab as it always did.
+one background tab per watched retailer and leaves it there. It never reloads an
+existing tab, so a page you are in the middle of using is safe from it; a search
+you start from the popup still reloads a stale tab as it always did. The cost of
+that caution is that after the extension reloads, the monitor's own background
+tab no longer answers and a fresh one is opened beside it, so you may find a
+stray retailer tab to close.
 
 Chrome must be running for the monitor to work, though the window can be
 minimised. Chrome may stretch alarms when the machine is idle or on battery, so
