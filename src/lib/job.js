@@ -3,7 +3,7 @@
 // focus) is only a view: it renders whatever job state is stored and re-renders on change.
 //
 // Job shape:
-//   { id, retailer, itemId, postalCode, input, phase, item, nearby, inStock, checkedIds,
+//   { id, retailer, itemId, postalCode, mode, input, phase, item, nearby, inStock, checkedIds,
 //     search: { searched, remaining, complete, rateLimited, noLocation } | null,
 //     error: { code, message } | null, startedAt, updatedAt }
 // phase: "lookup" -> ("searching" ->)* "done" | "error" | "interrupted"
@@ -59,7 +59,7 @@ export function createJobs({ forward, storage, now = Date.now }) {
     let res;
     try {
       res = await forward({
-        type: "findInStock", retailer: job.retailer, itemId: job.itemId, postalCode: job.postalCode,
+        type: "findInStock", retailer: job.retailer, itemId: job.itemId, postalCode: job.postalCode, mode: job.mode,
         nearby: job.nearby, checkedIds: job.checkedIds, itemUrl: job.item?.url,
       });
     } catch (err) {
@@ -81,7 +81,7 @@ export function createJobs({ forward, storage, now = Date.now }) {
   async function run(job) {
     let res;
     try {
-      res = await forward({ type: "lookup", retailer: job.retailer, itemId: job.itemId, postalCode: job.postalCode });
+      res = await forward({ type: "lookup", retailer: job.retailer, itemId: job.itemId, postalCode: job.postalCode, mode: job.mode });
     } catch (err) {
       return fail(job, null, String(err?.message ?? err));
     }
@@ -91,6 +91,13 @@ export function createJobs({ forward, storage, now = Date.now }) {
     job.nearby = res.stores ?? [];
     job.inStock = job.nearby.filter((s) => s.status === "available");
     job.checkedIds = [];
+    if (job.mode === "delivery") {
+      // Delivery is answered by the lookup itself. `complete: false` means the adapter can
+      // widen its answer (walmart's node count), which is what "Keep searching" then does.
+      job.search = { searched: job.nearby.length, remaining: 0, complete: res.complete !== false, rateLimited: false, noLocation: false };
+      job.phase = "done";
+      return save(job);
+    }
     if (!shouldSearch(job.item, job.nearby)) {
       job.phase = "done";
       return save(job);
@@ -99,9 +106,9 @@ export function createJobs({ forward, storage, now = Date.now }) {
   }
 
   // Starts a new job (replacing any running one) and returns it right away; the work continues in the background.
-  async function start({ retailer, itemId, postalCode, input = "" }) {
+  async function start({ retailer, itemId, postalCode, mode = "pickup", input = "" }) {
     const job = {
-      id: `${now()}-${Math.random().toString(36).slice(2, 8)}`, retailer, itemId, postalCode, input,
+      id: `${now()}-${Math.random().toString(36).slice(2, 8)}`, retailer, itemId, postalCode, mode, input,
       phase: "lookup", item: null, nearby: [], inStock: [], checkedIds: [], search: null, error: null, startedAt: now(), updatedAt: now(),
     };
     await save(job);
