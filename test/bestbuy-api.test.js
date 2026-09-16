@@ -81,3 +81,16 @@ describe("availability postal code", () => {
     } finally { vi.unstubAllGlobals(); }
   });
 });
+
+describe("delivery without stores", () => {
+  it("builds a valid call with no locations and still parses the shipping answer", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(new Response(readFileSync(new URL("./fixtures/bestbuy-availability.json", import.meta.url), "utf8"), { status: 200, headers: { "content-type": "application/json" } }));
+    vi.stubGlobal("fetch", fetchMock);
+    try {
+      const { delivery } = await getAvailability("19446111", [], "M5V 3L9");
+      expect(delivery.status).toBe("available");
+      expect(fetchMock.mock.calls[0][0]).toContain("locations=&");
+      expect(fetchMock.mock.calls[0][0]).toContain("postalCode=M5V+3L9");
+    } finally { vi.unstubAllGlobals(); }
+  });
+});
