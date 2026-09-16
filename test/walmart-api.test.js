@@ -157,3 +157,17 @@ describe("fetching", () => {
     await expect(findStores("ZZZ 999", "1")).rejects.toMatchObject({ code: "invalid_postal" });
   });
 });
+
+describe("delivery access types", () => {
+  it("defaults to the pickup access types", () => {
+    const vars = JSON.parse(decodeURIComponent(buildNearByNodesUrl("M5V 3L9", "1", 10).split("variables=")[1]));
+    expect(vars.input.accessTypes).toEqual(["PICKUP_INSTORE", "PICKUP_CURBSIDE"]);
+  });
+  it("asks for DELIVERY_ADDRESS nodes when told to", () => {
+    const vars = JSON.parse(decodeURIComponent(buildNearByNodesUrl("M5V 3L9", "1", 50, null, ["DELIVERY_ADDRESS"]).split("variables=")[1]));
+    expect(vars.input.accessTypes).toEqual(["DELIVERY_ADDRESS"]);
+    expect(vars.input.postalCode).toBe("M5V 3L9");
+    expect(vars.input.maxCount).toBe(50);
+    expect(vars.checkItemAvailability).toBe(true);
+  });
+});

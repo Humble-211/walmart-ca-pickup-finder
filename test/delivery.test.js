@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { deliveryText } from "../src/lib/delivery.js";
+import { deliveryText, deliveryModeStatus } from "../src/lib/delivery.js";
 
 describe("deliveryText", () => {
   it("shows status, quantity and the retailer's own eta wording", () => {
@@ -19,5 +19,25 @@ describe("deliveryText", () => {
   });
   it("falls back to 'you' without a postal code", () => {
     expect(deliveryText({ status: "available", quantity: null, eta: null }, "")).toBe("Delivery to you: In stock");
+  });
+});
+
+describe("deliveryModeStatus", () => {
+  const item = { name: "Thing", delivery: { status: "available", quantity: 5, eta: null } };
+  it("says nothing when the item can be delivered", () => {
+    expect(deliveryModeStatus(item, "M5V 3L9")).toBe("");
+  });
+  it("says so plainly when it cannot be delivered", () => {
+    expect(deliveryModeStatus({ ...item, delivery: { status: "out_of_stock", quantity: 0, eta: null } }, "M5V 3L9"))
+      .toBe("This item cannot be delivered to M5V 3L9.");
+  });
+  it("says the retailer did not answer when the status is unknown or missing", () => {
+    expect(deliveryModeStatus({ ...item, delivery: { status: "unknown", quantity: null, eta: null } }, "M5V 3L9"))
+      .toBe("This store did not say whether it delivers to M5V 3L9.");
+    expect(deliveryModeStatus({ ...item, delivery: null }, "M5V 3L9"))
+      .toBe("This store did not say whether it delivers to M5V 3L9.");
+  });
+  it("says nothing without an item", () => {
+    expect(deliveryModeStatus(null, "M5V 3L9")).toBe("");
   });
 });

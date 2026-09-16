@@ -32,11 +32,17 @@ export function buildHeaders(opName) {
 
 // Either a postal code (geo = null) or a point: geo = {lat, lon, radiusKm}.
 // Walmart accepts maxCount 5..50 and radius 1..100 km; a point overrides the postal code.
-export function buildNearByNodesUrl(postalCode, itemId, maxCount = 10, geo = null) {
+// accessTypes selects the fulfillment type: the pickup pair, or ["DELIVERY_ADDRESS"] for
+// delivery (the only delivery NodeAccessType the schema accepts —
+// docs/walmart-ca-endpoints.md).
+export const PICKUP_ACCESS_TYPES = ["PICKUP_INSTORE", "PICKUP_CURBSIDE"];
+export const DELIVERY_ACCESS_TYPES = ["DELIVERY_ADDRESS"];
+
+export function buildNearByNodesUrl(postalCode, itemId, maxCount = 10, geo = null, accessTypes = PICKUP_ACCESS_TYPES) {
   const variables = {
     input: {
       postalCode: geo ? null : postalCode,
-      accessTypes: ["PICKUP_INSTORE", "PICKUP_CURBSIDE"],
+      accessTypes,
       nodeTypes: ["STORE", "PICKUP_SPOKE", "PICKUP_POPUP"],
       latitude: geo?.lat ?? null, longitude: geo?.lon ?? null, radius: geo?.radiusKm ?? null,
       productId: String(itemId),
@@ -101,6 +107,11 @@ export async function getItem(itemId) {
 
 export async function findStores(postalCode, itemId, maxCount = 10) {
   return parseStores(await gql(buildNearByNodesUrl(postalCode, itemId, maxCount), "nearByNodes"));
+}
+
+// The maxCount delivery nodes serving postalCode, with this item's delivery availability.
+export async function findDeliveryStores(postalCode, itemId, maxCount = 10) {
+  return parseStores(await gql(buildNearByNodesUrl(postalCode, itemId, maxCount, null, DELIVERY_ACCESS_TYPES), "nearByNodes"));
 }
 
 // The maxCount stores nearest a point within radiusKm (walmart caps radius at 100), with availability.

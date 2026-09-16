@@ -30,12 +30,18 @@ async function handle(msg) {
     case "ping":
       return { ok: true };
     case "lookup": {
+      if (msg.mode === "delivery") {
+        const [item, { delivery }] = await Promise.all([api.getItem(msg.itemId), api.getAvailability(msg.itemId, [], msg.postalCode)]);
+        return { ok: true, item: { ...item, delivery }, stores: [], complete: true };
+      }
       const [item, { stores, delivery }] = await Promise.all([api.getItem(msg.itemId), lookupStores(msg.postalCode, msg.itemId)]);
       // Use the canonical (slugged) product URL everywhere now that we have it.
       for (const s of stores) s.url = item.url;
       return { ok: true, item: { ...item, delivery }, stores };
     }
     case "findInStock": {
+      // Best Buy ships from distribution centres: there is no farther store to try.
+      if (msg.mode === "delivery") return { ok: true, inStock: [], searched: 0, checkedIds: [], complete: true, rateLimited: false };
       if (!Array.isArray(msg.nearby)) return { ok: false, code: "unknown", error: "findInStock needs the nearby store list." };
       const result = await findNearestInStock({
         sku: msg.itemId, nearby: msg.nearby, checkedIds: msg.checkedIds ?? [],

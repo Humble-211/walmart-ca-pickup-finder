@@ -100,8 +100,9 @@ shipped on 2026-09-15: the one answer for the postal code.
 `accessTypes: ["DELIVERY_ADDRESS"]` and `maxCount: 10`, and maps the nodes
 exactly as the pickup path does, and answers `complete: false` because the node
 count can still be widened. `item.delivery` is derived from those nodes:
-`available` when any node is `IN_STOCK`, `out_of_stock` when all are known and
-none is, `unknown` otherwise; `quantity` is null (walmart reports no count) and
+`available` when any node is `IN_STOCK`, `out_of_stock` when at least one node
+reports a status and none is in stock, `unknown` when no node reports one;
+`quantity` is null (walmart reports no count) and
 `eta` is null (no per-postal-code date without touching the session). The
 returned `stores` are the delivery nodes. `findInStock` with `mode: "delivery"`
 re-runs the same call with `maxCount: 50` — one call, no outward probing — and

@@ -146,3 +146,77 @@ describe("jobs", () => {
     expect((await jobs.get()).id).toBe("j");
   });
 });
+
+describe("delivery mode jobs", () => {
+  it("forwards the mode, skips the search phase and records whether the answer can be widened", async () => {
+    const storage = fakeStorage();
+    const forward = vi.fn(async () => ({ ok: true, item: { ...item, delivery: { status: "available", quantity: 5, eta: "arrives Sep 22" } }, stores: [], complete: true }));
+    const jobs = createJobs({ forward, storage });
+    await jobs.start({ retailer: "staples", itemId: "1", postalCode: "M5V 3L9", mode: "delivery" });
+    await flush(); await flush();
+    const job = await jobs.get();
+    expect(forward).toHaveBeenCalledTimes(1);
+    expect(forward.mock.calls[0][0]).toMatchObject({ type: "lookup", mode: "delivery" });
+    expect(job.mode).toBe("delivery");
+    expect(job.phase).toBe("done");
+    expect(job.search).toEqual({ searched: 0, remaining: 0, complete: true, rateLimited: false, noLocation: false });
+    expect(job.item.delivery.status).toBe("available");
+  });
+
+  it("offers a widening search when the lookup says it is not complete, and runs it with the mode", async () => {
+    const storage = fakeStorage();
+    const forward = vi.fn(async (msg) => msg.type === "lookup"
+      ? { ok: true, item, stores: [store("a", "out_of_stock", 1)], complete: false }
+      : { ok: true, inStock: [store("b", "available", 9)], searched: 50, checkedIds: ["a", "b"], complete: true });
+    const jobs = createJobs({ forward, storage });
+    await jobs.start({ retailer: "walmart", itemId: "1", postalCode: "M5V 3L9", mode: "delivery" });
+    await flush(); await flush();
+    expect((await jobs.get()).search).toMatchObject({ searched: 1, complete: false });
+    await jobs.continueSearch();
+    await flush(); await flush();
+    const job = await jobs.get();
+    expect(forward.mock.calls[1][0]).toMatchObject({ type: "findInStock", mode: "delivery" });
+    expect(job.inStock.map((s) => s.id)).toEqual(["b"]);
+    expect(job.search.complete).toBe(true);
+  });
+
+  it("defaults to pickup and leaves that path unchanged", async () => {
+    const storage = fakeStorage();
+    const forward = vi.fn(async (msg) => msg.type === "lookup"
+      ? { ok: true, item, stores: [store("a", "out_of_stock", 1)] }
+      : { ok: true, inStock: [], searched: 3, checkedIds: ["a"], complete: true });
+    const jobs = createJobs({ forward, storage });
+    const started = await jobs.start({ retailer: "staples", itemId: "1", postalCode: "M5V 3L9" });
+    expect(started.mode).toBe("pickup");
+    await flush(); await flush();
+    expect(forward.mock.calls.map((c) => c[0].mode)).toEqual(["pickup", "pickup"]);
+  });
+
+  it("updates job.item.delivery when the widening search reports a fresher delivery summary", async () => {
+    const storage = fakeStorage();
+    const forward = vi.fn(async (msg) => msg.type === "lookup"
+      ? { ok: true, item: { ...item, delivery: { status: "out_of_stock", quantity: null, eta: null } }, stores: [store("a", "out_of_stock", 1)], complete: false }
+      : { ok: true, inStock: [store("b", "available", 9)], searched: 50, checkedIds: ["a", "b"], complete: true, delivery: { status: "available", quantity: null, eta: null } });
+    const jobs = createJobs({ forward, storage });
+    await jobs.start({ retailer: "walmart", itemId: "1", postalCode: "M5V 3L9", mode: "delivery" });
+    await flush(); await flush();
+    expect((await jobs.get()).item.delivery).toEqual({ status: "out_of_stock", quantity: null, eta: null });
+    await jobs.continueSearch();
+    await flush(); await flush();
+    const job = await jobs.get();
+    expect(job.item.delivery).toEqual({ status: "available", quantity: null, eta: null });
+  });
+
+  it("leaves job.item untouched when a pickup search's findInStock carries no delivery field", async () => {
+    const storage = fakeStorage();
+    const forward = vi.fn(async (msg) => msg.type === "lookup"
+      ? { ok: true, item, stores: [store("a", "out_of_stock", 1)] }
+      : { ok: true, inStock: [store("z", "available", 40)], searched: 12, checkedIds: ["a", "z"], complete: true, rateLimited: false });
+    const jobs = createJobs({ forward, storage });
+    await jobs.start({ retailer: "staples", itemId: "1", postalCode: "M5V 3L9" });
+    await flush(); await flush();
+    const job = await jobs.get();
+    expect(job.phase).toBe("done");
+    expect(job.item).toEqual(item); // no `delivery` field appears anywhere on it
+  });
+});

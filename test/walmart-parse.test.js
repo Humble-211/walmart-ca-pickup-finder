@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
-import { parseStores, parseItem } from "../src/retailers/walmart/parse.js";
+import { parseStores, parseItem, deliverySummary } from "../src/retailers/walmart/parse.js";
 import { WalmartApiError } from "../src/lib/errors.js";
 
 const nearBy = JSON.parse(readFileSync(new URL("./fixtures/nearByNodes.json", import.meta.url), "utf8"));
@@ -140,5 +140,19 @@ describe("parseItem", () => {
     const copy = structuredClone(item);
     copy.data.product.canonicalUrl = "//evil.com/x";
     expect(parseItem(copy).url).toBe("https://www.walmart.ca/en/ip/6000208927194");
+  });
+});
+
+describe("deliverySummary", () => {
+  const store = (id, status) => ({ id, name: id, address: "", postalCode: "", distanceKm: 1, status, url: null });
+  it("is available when any delivery node has the item", () => {
+    expect(deliverySummary([store("a", "out_of_stock"), store("b", "available")])).toEqual({ status: "available", quantity: null, eta: null });
+  });
+  it("is out of stock when every node is known and none has it", () => {
+    expect(deliverySummary([store("a", "out_of_stock"), store("b", "out_of_stock")]).status).toBe("out_of_stock");
+  });
+  it("is unknown when no node reports a status, or there are no nodes at all", () => {
+    expect(deliverySummary([store("a", "unknown")]).status).toBe("unknown");
+    expect(deliverySummary([]).status).toBe("unknown");
   });
 });

@@ -74,7 +74,7 @@ export async function handle(msg, { chrome = globalThis.chrome, sleepMs, jobs } 
   if (!adapter) return { ok: false, code: "unsupported", error: ERROR_MESSAGES.unsupported };
   switch (msg?.type) {
     case "startJob":
-      return { ok: true, job: await jobs.start({ retailer: msg.retailer, itemId: msg.itemId, postalCode: msg.postalCode, input: msg.input }) };
+      return { ok: true, job: await jobs.start({ retailer: msg.retailer, itemId: msg.itemId, postalCode: msg.postalCode, mode: msg.mode, input: msg.input }) };
     case "lookup":
     case "findInStock":
       return forward(chrome, adapter, msg, sleepMs, FORWARD_ATTEMPTS);

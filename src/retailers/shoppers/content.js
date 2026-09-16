@@ -30,13 +30,18 @@ async function handle(msg) {
     case "ping":
       return { ok: true };
     case "lookup": {
-      const user = locate(msg.postalCode);
       const item = await api.getItem(msg.itemId);
       resolved.set(msg.itemId, item.id);
+      if (msg.mode === "delivery") {
+        return { ok: true, item: { ...item, delivery: await api.getDelivery(item.id, msg.postalCode) }, stores: [], complete: true };
+      }
+      const user = locate(msg.postalCode);
       const [stores, delivery] = await Promise.all([api.getStoreStock(item.id, user, false), api.getDelivery(item.id, msg.postalCode)]);
       return { ok: true, item: { ...item, delivery }, stores: stores.map((s) => ({ ...s, url: item.url })) };
     }
     case "findInStock": {
+      // Shoppers ships from distribution centres: there is no farther store to try.
+      if (msg.mode === "delivery") return { ok: true, inStock: [], searched: 0, checkedIds: [], complete: true, rateLimited: false };
       if (!Array.isArray(msg.nearby)) return { ok: false, code: "unknown", error: "findInStock needs the nearby store list." };
       const result = await searchInStock({
         code: resolved.get(msg.itemId) ?? msg.itemId, user: locatePostalCode(msg.postalCode) ?? locateUser(msg.nearby, catalogById), nearby: msg.nearby, checkedIds: msg.checkedIds ?? [],
