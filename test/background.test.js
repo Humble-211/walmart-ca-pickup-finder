@@ -111,4 +111,11 @@ describe("background handle", () => {
     expect(chrome.tabs.sendMessage).toHaveBeenCalledWith(1, expect.objectContaining({ type: "lookup" }));
     expect(res.echo.itemId).toBe("1");
   });
+  it("passes the mode from startJob to the job runner", async () => {
+    const { chrome } = fakeChrome({ tabs: [{ id: 1, url: "https://www.staples.ca/" }] });
+    const start = vi.fn(async (args) => ({ id: "j", ...args }));
+    const res = await handle({ type: "startJob", retailer: "staples", itemId: "1", postalCode: "M5V 3L9", mode: "delivery", input: "u" }, { chrome, jobs: { start } });
+    expect(start).toHaveBeenCalledWith({ retailer: "staples", itemId: "1", postalCode: "M5V 3L9", mode: "delivery", input: "u" });
+    expect(res.job.mode).toBe("delivery");
+  });
 });
