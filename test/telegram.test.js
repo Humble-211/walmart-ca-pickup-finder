@@ -42,3 +42,39 @@ describe("sendMessage", () => {
     expect(await sendMessage({ token: "t", chatId: "c", text: "x" }, { fetch })).toEqual({ ok: false, error: "Telegram returned HTTP 502." });
   });
 });
+
+// A real user pasted the number in front of the colon in their bot token as the
+// chat id. Telegram answered "Forbidden: the bot can't send messages to the bot",
+// which is true and tells nobody what to do. The token's prefix IS the bot's own
+// id, so this is checkable before the request.
+describe("sendMessage credential checks", () => {
+  const okFetch = () => vi.fn(async () => ({ ok: true, status: 200, json: async () => ({ ok: true }) }));
+
+  it("names the mistake when the chat id is the bot's own id", async () => {
+    const fetch = okFetch();
+    const res = await sendMessage({ token: "123456789:AAHxyz", chatId: "123456789", text: "x" }, { fetch });
+    expect(res.ok).toBe(false);
+    expect(res.error).toMatch(/bot's own id/i);
+    expect(fetch).not.toHaveBeenCalled();
+  });
+
+  it("tolerates whitespace around the pasted values when spotting it", async () => {
+    const fetch = okFetch();
+    expect((await sendMessage({ token: " 123456789:AAHxyz ", chatId: " 123456789 ", text: "x" }, { fetch })).ok).toBe(false);
+    expect(fetch).not.toHaveBeenCalled();
+  });
+
+  it("lets a real chat id through, including a negative group id", async () => {
+    for (const chatId of ["987654321", "-1001234567890"]) {
+      const fetch = okFetch();
+      expect(await sendMessage({ token: "123456789:AAHxyz", chatId, text: "x" }, { fetch })).toEqual({ ok: true });
+      expect(fetch).toHaveBeenCalledTimes(1);
+    }
+  });
+
+  it("does not trip on a token with no colon", async () => {
+    const fetch = okFetch();
+    expect(await sendMessage({ token: "nocolon", chatId: "nocolon", text: "x" }, { fetch })).toEqual({ ok: true });
+    expect(fetch).toHaveBeenCalledTimes(1);
+  });
+});
