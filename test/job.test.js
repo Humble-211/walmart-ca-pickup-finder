@@ -220,3 +220,38 @@ describe("delivery mode jobs", () => {
     expect(job.item).toEqual(item); // no `delivery` field appears anywhere on it
   });
 });
+
+// "Keep searching farther" means something different from the automatic first sweep:
+// it asks the adapter to cover the rest of the catalogue rather than stop once
+// nothing unchecked could be closer. The job is where those two are told apart.
+describe("exhaustive on resume", () => {
+  const setup = () => {
+    const storage = fakeStorage();
+    const forward = vi.fn(async (msg) =>
+      msg.type === "lookup"
+        ? { ok: true, item, stores: [store("a", "out_of_stock", 1)] }
+        : { ok: true, inStock: [], searched: 1, checkedIds: ["a"], complete: false, rateLimited: false });
+    return { jobs: createJobs({ forward, storage, now: () => 1 }), forward };
+  };
+
+  it("does not ask for an exhaustive sweep on the first, automatic search", async () => {
+    const { jobs, forward } = setup();
+    await jobs.start({ retailer: "staples", itemId: "1", postalCode: "M5V 3L9" });
+    await flush(); await flush();
+    const first = forward.mock.calls.map(([m]) => m).find((m) => m.type === "findInStock");
+    expect(first).toBeDefined();
+    expect(first.exhaustive).toBe(false);
+  });
+
+  it("asks for an exhaustive sweep when the user presses keep searching", async () => {
+    const { jobs, forward } = setup();
+    await jobs.start({ retailer: "staples", itemId: "1", postalCode: "M5V 3L9" });
+    await flush(); await flush();
+    forward.mockClear();
+    await jobs.continueSearch();
+    await flush(); await flush();
+    const resumed = forward.mock.calls.map(([m]) => m).find((m) => m.type === "findInStock");
+    expect(resumed).toBeDefined();
+    expect(resumed.exhaustive).toBe(true);
+  });
+});

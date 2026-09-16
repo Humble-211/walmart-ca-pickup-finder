@@ -200,3 +200,45 @@ describe("coveredKm responses", () => {
     expect(res.complete).toBe(true);
   });
 });
+
+// Exhaustive mode drops the nearest-only stop, so "Keep searching farther" can cover
+// a whole catalogue instead of proving there is nothing closer. Staples uses it for
+// the resumed search only; its first pass stays fast.
+describe("findNearestInStock exhaustive", () => {
+  it("keeps going past a store it has already found in stock", async () => {
+    const fetchAround = fakeApi(new Set(["n5", "e18"]));
+    const res = await findNearestInStock({
+      nearby: nearby(new Set(["n5"])), user: USER, catalog, fetchAround, maxCalls: 60, exhaustive: true,
+    });
+    expect(res.inStock.map((s) => s.id)).toContain("e18");
+    expect(res.searched).toBe(catalog.length);
+    expect(res.complete).toBe(true);
+  });
+
+  it("stops at the nearest hit when exhaustive is off, as the default search does", async () => {
+    const fetchAround = fakeApi(new Set(["n5", "e18"]));
+    const res = await findNearestInStock({
+      nearby: nearby(new Set(["n5"])), user: USER, catalog, fetchAround, maxCalls: 60,
+    });
+    expect(res.inStock.map((s) => s.id)).not.toContain("e18");
+    expect(fetchAround).not.toHaveBeenCalled();
+  });
+
+  it("reports incomplete when the call budget runs out before the catalogue is covered", async () => {
+    const fetchAround = fakeApi(new Set());
+    const res = await findNearestInStock({
+      nearby: nearby(new Set()), user: USER, catalog, fetchAround, maxCalls: 2, exhaustive: true,
+    });
+    expect(res.complete).toBe(false);
+    expect(res.searched).toBeLessThan(catalog.length);
+    expect(res.checkedIds.length).toBe(res.searched);
+  });
+
+  it("carries the exhaustive flag out, so the popup can word its note honestly", async () => {
+    const fetchAround = fakeApi(new Set());
+    const res = await findNearestInStock({ nearby: nearby(new Set()), user: USER, catalog, fetchAround, maxCalls: 2, exhaustive: true });
+    expect(res.exhaustive).toBe(true);
+    const plain = await findNearestInStock({ nearby: nearby(new Set()), user: USER, catalog, fetchAround, maxCalls: 2 });
+    expect(plain.exhaustive).toBe(false);
+  });
+});

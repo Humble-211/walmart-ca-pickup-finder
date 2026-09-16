@@ -1,6 +1,8 @@
 // Best Buy answers pickup availability for up to LOCATIONS_PER_CALL stores per call,
-// so the nationwide search is a nearest-first sweep over the store catalog in a
-// handful of batches, stopping at the first batch that contains stock.
+// so its whole catalogue costs about four calls. The search therefore sweeps all of
+// it, nearest first, and reports every store in the country holding the item rather
+// than stopping at the closest one. The only early exit left is the aggregate saying
+// the item is never sold in stores, where the remaining calls could not find one.
 import { haversineKm, locateUser } from "../../lib/geo.js";
 
 const PRODUCT_URL = (sku) => `https://www.bestbuy.ca/en-ca/product/${sku}`;
@@ -19,7 +21,6 @@ export async function findNearestInStock({ sku, nearby, checkedIds = [], onProgr
     inStock: inStock.sort((a, b) => (a.distanceKm ?? Infinity) - (b.distanceKm ?? Infinity)),
     searched: checked.size, checkedIds: [...checked], complete, rateLimited,
   });
-  if (inStock.length) return done(true);
   const user = locateUser(nearby, coords);
   if (!user) return { ...done(false), noLocation: true };
 
@@ -44,7 +45,7 @@ export async function findNearestInStock({ sku, nearby, checkedIds = [], onProgr
       }
     }
     onProgress?.({ calls: i / api.LOCATIONS_PER_CALL + 1, searched: checked.size, remaining: todo.length - i - batch.length });
-    if (inStock.length || NEVER_IN_STORE.has(result.aggregate)) break;
+    if (NEVER_IN_STORE.has(result.aggregate)) break;
   }
   return done(true);
 }

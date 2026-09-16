@@ -52,7 +52,10 @@ export function createJobs({ forward, storage, now = Date.now }) {
     await save(job);
   }
 
-  async function search(job) {
+  // `exhaustive` tells the adapter to cover the rest of its catalogue instead of
+  // stopping once nothing unchecked could be closer. The automatic first search stays
+  // fast; only "Keep searching farther" asks for the full sweep.
+  async function search(job, exhaustive = false) {
     job.phase = "searching";
     job.error = null;
     await save(job);
@@ -60,7 +63,7 @@ export function createJobs({ forward, storage, now = Date.now }) {
     try {
       res = await forward({
         type: "findInStock", retailer: job.retailer, itemId: job.itemId, postalCode: job.postalCode, mode: job.mode,
-        nearby: job.nearby, checkedIds: job.checkedIds, itemUrl: job.item?.url, item: job.item,
+        nearby: job.nearby, checkedIds: job.checkedIds, itemUrl: job.item?.url, item: job.item, exhaustive,
       });
     } catch (err) {
       return fail(job, null, String(err?.message ?? err));
@@ -74,7 +77,7 @@ export function createJobs({ forward, storage, now = Date.now }) {
     job.inStock = mergeInStock(job.inStock, res.inStock ?? []);
     job.checkedIds = res.checkedIds ?? job.checkedIds;
     if (res.delivery) job.item = { ...job.item, delivery: res.delivery };
-    job.search = { searched: res.searched ?? 0, remaining: 0, complete: Boolean(res.complete), rateLimited: Boolean(res.rateLimited), noLocation: Boolean(res.noLocation) };
+    job.search = { searched: res.searched ?? 0, remaining: 0, complete: Boolean(res.complete), rateLimited: Boolean(res.rateLimited), noLocation: Boolean(res.noLocation), exhaustive: Boolean(res.exhaustive) };
     job.phase = "done";
     return save(job);
   }
@@ -121,7 +124,7 @@ export function createJobs({ forward, storage, now = Date.now }) {
   async function continueSearch() {
     const job = await get();
     if (!job || !job.item || job.phase === "lookup" || job.phase === "searching") return job;
-    search(job).catch((err) => fail(job, null, String(err?.message ?? err)));
+    search(job, true).catch((err) => fail(job, null, String(err?.message ?? err)));
     return job;
   }
 

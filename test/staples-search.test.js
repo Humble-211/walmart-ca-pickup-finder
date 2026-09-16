@@ -51,3 +51,32 @@ describe("withCatalogNames", () => {
     expect(withCatalogNames(stores, catalogById)[0].name).toBe("Staples Nowhere");
   });
 });
+
+// Staples covers 302 stores five at a time, so its remaining work is always "cover
+// the rest of the catalogue", never "find something closer". It therefore reports
+// itself unfinished while stores are unchecked, even when a nearby one has stock,
+// so "Keep searching farther" stays available to run the sweep.
+describe("staples sweeps its whole catalogue", () => {
+  it("stays unfinished while stores are unchecked, even with stock next door", async () => {
+    const api = fakeApi(new Set(["100"]));
+    const res = await searchInStock({ sku: "1", nearby: nearby(new Set(["100"])), api, catalog, gapMs: 0, productUrl: "u" });
+    expect(res.inStock.map((s) => s.id)).toEqual(["100"]);
+    expect(res.complete).toBe(false);
+    expect(res.exhaustive).toBe(true);
+    expect(res.remaining).toBeGreaterThan(0);
+  });
+
+  it("reports finished once every store has been checked", async () => {
+    const api = fakeApi(new Set());
+    const res = await searchInStock({ sku: "1", nearby: nearby(new Set()), api, catalog, gapMs: 0, productUrl: "u", exhaustive: true, maxCalls: 40 });
+    expect(res.remaining).toBe(0);
+    expect(res.complete).toBe(true);
+  });
+
+  it("finds a far store the nearest-only search would never have reached", async () => {
+    const api = fakeApi(new Set(["100", "107"]));
+    const res = await searchInStock({ sku: "1", nearby: nearby(new Set(["100"])), api, catalog, gapMs: 0, productUrl: "u", exhaustive: true, maxCalls: 40 });
+    expect(res.inStock.map((s) => s.id)).toEqual(["100", "107"]);
+    expect(res.complete).toBe(true);
+  });
+});

@@ -57,7 +57,12 @@ export function planProbe(uncovered, catalog = uncovered, probe = DEFAULT_PROBE)
 // either as an array or as { stores, coveredKm }. With coveredKm, every catalog store within
 // that distance of the centre counts as checked even when the response omits it (a
 // "stores with stock only" query covers everything nearer than its farthest hit).
-export async function findNearestInStock({ nearby, user, catalog, fetchAround, onProgress, maxCalls = 20, gapMs = 0, probe = {} }) {
+// `exhaustive` drops the nearest-only stop: instead of finishing once nothing
+// unchecked could be closer than the best hit so far, the sweep runs until the whole
+// catalogue is covered or the call budget runs out. It is what "Keep searching
+// farther" uses to list every store holding an item, rather than proving there is
+// none closer.
+export async function findNearestInStock({ nearby, user, catalog, fetchAround, onProgress, maxCalls = 20, gapMs = 0, probe = {}, exhaustive = false }) {
   const p = { ...DEFAULT_PROBE, ...probe };
   const coords = new Map(catalog.map((s) => [s.id, s]));
   const covered = new Set(nearby.map((s) => s.id));
@@ -67,7 +72,7 @@ export async function findNearestInStock({ nearby, user, catalog, fetchAround, o
     .map((s) => ({ ...s, userKm: haversineKm(user, s) }))
     .sort((a, b) => a.userKm - b.userKm);
   const bestKm = () => Math.min(...inStock.map((s) => s.distanceKm ?? Number.POSITIVE_INFINITY));
-  const settled = () => !uncovered.length || uncovered[0].userKm >= bestKm();
+  const settled = () => !uncovered.length || (!exhaustive && uncovered[0].userKm >= bestKm());
   let calls = 0, rateLimited = false;
 
   while (!settled() && calls < maxCalls) {
@@ -97,5 +102,5 @@ export async function findNearestInStock({ nearby, user, catalog, fetchAround, o
   }
 
   inStock.sort((a, b) => (a.distanceKm ?? Number.POSITIVE_INFINITY) - (b.distanceKm ?? Number.POSITIVE_INFINITY));
-  return { inStock, searched: covered.size, checkedIds: [...covered], calls, complete: !rateLimited && settled(), rateLimited };
+  return { inStock, searched: covered.size, checkedIds: [...covered], calls, complete: !rateLimited && settled(), rateLimited, exhaustive, remaining: uncovered.length };
 }

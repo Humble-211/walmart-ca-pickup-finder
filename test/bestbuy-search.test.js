@@ -21,20 +21,26 @@ function fakeApi(inStock, { aggregate = "OutOfStock", perCall = 2 } = {}) {
 }
 
 describe("bestbuy findNearestInStock", () => {
-  it("returns nearby in-stock stores without any call when one is already available", async () => {
-    const api = fakeApi(new Set());
+  // Best Buy answers 90 stores a call, so covering its whole catalogue costs four
+  // calls. It therefore lists every store in the country that has the item rather
+  // than stopping at the nearest one, which is what someone deciding where to drive
+  // actually asked for.
+  it("sweeps the rest of the country even when a nearby store already has stock", async () => {
+    const api = fakeApi(new Set(["4"]), { perCall: 3 });
     const res = await findNearestInStock({ sku: "1", nearby: [near(catalog[0], "available")], api, catalog });
-    expect(api.getAvailability).not.toHaveBeenCalled();
-    expect(res.inStock.map((s) => s.id)).toEqual(["1"]);
+    expect(api.getAvailability).toHaveBeenCalled();
+    expect(new Set(res.inStock.map((s) => s.id))).toEqual(new Set(["1", "4"]));
+    expect(res.searched).toBe(4);
     expect(res.complete).toBe(true);
   });
-  it("checks the remaining stores nearest-first in batches and stops at the first batch with a hit", async () => {
+  it("checks every remaining store nearest-first, past the first batch with a hit", async () => {
     const api = fakeApi(new Set(["3", "4"]), { perCall: 1 });
     const progress = vi.fn();
     const res = await findNearestInStock({ sku: "1", nearby: [near(catalog[0])], api, catalog, onProgress: progress });
-    // Order by distance from Toronto: Ottawa (2), Halifax (4), Vancouver (3) -> two calls, stop at Halifax.
-    expect(api.getAvailability.mock.calls.map((c) => c[1])).toEqual([["2"], ["4"]]);
-    expect(res.inStock.map((s) => s.id)).toEqual(["4"]);
+    // Order by distance from Toronto: Ottawa (2), Halifax (4), Vancouver (3). All three
+    // are asked, and both stores holding the item come back, nearest first.
+    expect(api.getAvailability.mock.calls.map((c) => c[1])).toEqual([["2"], ["4"], ["3"]]);
+    expect(res.inStock.map((s) => s.id)).toEqual(["4", "3"]);
     // With only one nearby store, locateUser (src/lib/geo.js) falls back to that
     // store's own coordinates (its own test suite asserts this fallback) rather than
     // triangulating the true user position, so the distance to a far store is an
@@ -42,8 +48,8 @@ describe("bestbuy findNearestInStock", () => {
     expect(res.inStock[0].distanceKm).toBeCloseTo(haversineKm(USER, catalog[3]), -1);
     expect(res.inStock[0].url).toBe("https://www.bestbuy.ca/en-ca/product/1");
     expect(res.complete).toBe(true);
-    expect(res.searched).toBe(3);
-    expect(new Set(res.checkedIds)).toEqual(new Set(["1", "2", "4"]));
+    expect(res.searched).toBe(4);
+    expect(new Set(res.checkedIds)).toEqual(new Set(["1", "2", "3", "4"]));
     expect(progress).toHaveBeenCalled();
   });
   it("uses the canonical productUrl for far-store results when given", async () => {

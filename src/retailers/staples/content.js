@@ -37,7 +37,10 @@ async function handle(msg) {
       if (msg.mode === "delivery") return { ok: true, inStock: [], searched: 0, checkedIds: [], complete: true, rateLimited: false };
       if (!Array.isArray(msg.nearby)) return { ok: false, code: "unknown", error: "findInStock needs the nearby store list." };
       const result = await searchInStock({
+        // Only "Keep searching farther" sweeps the whole catalogue; the first, automatic
+        // search stays fast, because covering 302 stores five at a time takes a while.
         sku: skuOf(msg.itemId), nearby: msg.nearby, checkedIds: msg.checkedIds ?? [], onProgress: reportProgress,
+        exhaustive: msg.exhaustive === true,
         api, catalog: catalog.stores, productUrl: msg.itemUrl ?? `https://www.staples.ca/products/${encodeURIComponent(msg.itemId)}`,
       });
       return { ok: true, ...result, inStock: withCatalogNames(result.inStock, catalogById) };

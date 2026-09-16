@@ -2,8 +2,15 @@
 
 Chrome extension. Paste a product URL from Walmart, Best Buy, Staples, or Shoppers
 Drug Mart (Walmart item IDs still accepted) and a Canadian postal code; it lists the nearest stores
-of that retailer with pickup status and then searches the whole country for the
-nearest store that has the item in stock.
+of that retailer with pickup status and then searches the country for stores that
+have the item in stock.
+
+How far that search goes depends on what the retailer's API allows. Walmart and
+Shoppers stop once nothing unchecked could be closer than the nearest store already
+found, because covering their catalogues store by store would cross the rate limit.
+Best Buy answers 90 stores per call, so it sweeps all 307 and lists every one of
+them holding the item. Staples answers 5 per call, so its first search stays quick
+and "Keep searching farther" covers the rest of its 302 a chunk at a time.
 
 For Walmart, item IDs come in two forms, both accepted: numeric (`6000208927194`)
 and 12-character alphanumeric (`1SZQHN3LOSE0`). Both appear at the end of the

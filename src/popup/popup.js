@@ -110,6 +110,9 @@ function nearestNote(j) {
   if (s.rateLimited) return { text: `${host} rate-limited the search after ${s.searched} stores. Wait a minute or two, then keep searching.`, more: true };
   if (!j.inStock.length && s.complete) return { text: `No ${label} in Canada has this in stock for pickup (checked ${s.searched} stores).`, more: false };
   if (!j.inStock.length) return { text: `None of the ${s.searched} nearest stores have it in stock.`, more: true };
+  // A resumed search covers the rest of the catalogue rather than proving nothing is
+  // closer, so promising "a closer store" there would be the wrong promise.
+  if (!s.complete && s.exhaustive) return { text: `${j.inStock.length} found so far (${s.searched} stores checked). Keep searching to cover the rest.`, more: true };
   if (!s.complete) return { text: `Closest found so far (${s.searched} stores checked). A closer store may still turn up.`, more: true };
   return { text: "", more: false };
 }

@@ -20,7 +20,7 @@ export function withCatalogNames(stores, catalogById) {
   });
 }
 
-export async function searchInStock({ sku, nearby, checkedIds = [], onProgress, api, catalog, productUrl, gapMs = SEARCH_GAP_MS, maxCalls = SEARCH_MAX_CALLS }) {
+export async function searchInStock({ sku, nearby, checkedIds = [], onProgress, api, catalog, productUrl, gapMs = SEARCH_GAP_MS, maxCalls = SEARCH_MAX_CALLS, exhaustive = false }) {
   const coords = new Map(catalog.map((s) => [s.id, s]));
   const user = locateUser(nearby, coords);
   const withUrl = (s) => ({ ...s, url: productUrl });
@@ -30,8 +30,17 @@ export async function searchInStock({ sku, nearby, checkedIds = [], onProgress, 
   const known = new Set(nearby.map((s) => s.id));
   const seed = [...nearby, ...checkedIds.filter((id) => !known.has(id)).map((id) => ({ id, status: "unknown", distanceKm: null }))];
   const result = await findNearestInStock({
-    nearby: seed, user, catalog, onProgress, maxCalls, gapMs, probe: PROBE,
+    nearby: seed, user, catalog, onProgress, maxCalls, gapMs, probe: PROBE, exhaustive,
     fetchAround: (_lat, _lon, centre) => api.getAvailability(sku, centre.postalCode),
   });
-  return { ...result, inStock: result.inStock.map(withUrl) };
+  // Staples answers five stores per call, so what is left to do is always covering the
+  // rest of its 302, never finding something closer. It therefore calls itself finished
+  // only when nothing is unchecked, which is what keeps "Keep searching farther" on
+  // screen after a fast first pass that happened to find stock next door.
+  return {
+    ...result,
+    inStock: result.inStock.map(withUrl),
+    exhaustive: true,
+    complete: !result.rateLimited && result.remaining === 0,
+  };
 }
