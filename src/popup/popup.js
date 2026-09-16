@@ -202,6 +202,29 @@ $("form").addEventListener("submit", (ev) => {
 
 $("searchMore").addEventListener("click", () => send({ type: "continueJob" }));
 
+// "Watch for restock" reuses whatever is already typed: the same parse the search
+// uses, and the same postal code. The monitor always asks the delivery question,
+// so the mode radio does not apply here.
+$("watch").addEventListener("click", async () => {
+  const input = $("item").value;
+  const parsed = parseProductUrl(input);
+  if (!parsed) { showError(`Paste a product URL from ${storesList()} (or a Walmart item ID).`); return; }
+  const postalCode = normalizePostalCode($("postal").value);
+  if (!postalCode) { showError("Enter a valid Canadian postal code (e.g. M5V 3L9)."); return; }
+  $("postal").value = postalCode;
+  showError("");
+  const res = await chrome.runtime.sendMessage({
+    type: "addWatch", retailer: parsed.retailer, itemId: parsed.itemId, input: input.trim(), postalCode,
+  });
+  const note = $("watchNote");
+  note.textContent = res?.ok
+    ? `Watching for delivery to ${postalCode}. Alerts go to Telegram; set it up in the extension's options.`
+    : `Could not watch this: ${res?.error ?? "unknown error"}`;
+  note.hidden = false;
+});
+
+$("openOptions").addEventListener("click", (ev) => { ev.preventDefault(); chrome.runtime.openOptionsPage(); });
+
 // Every step the worker persists shows up here, whether or not this popup started the job.
 chrome.storage.onChanged.addListener((changes, area) => {
   if (area === "session" && changes[JOB_KEY]) render(changes[JOB_KEY].newValue ?? null);

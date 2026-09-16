@@ -38,3 +38,5 @@ h2 { font-size: 13px; margin: 14px 0 0; }
 .modes legend { float: left; width: 100%; font-weight: 600; padding: 0; }
 .modes label { display: flex; gap: 4px; align-items: center; font-weight: 400; }
 .modes input { width: auto; margin: 0; }
+.actions { display: flex; gap: .5rem; }
+.actions button { flex: 1; }

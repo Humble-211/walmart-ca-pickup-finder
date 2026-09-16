@@ -18,8 +18,14 @@
       <label><input type="radio" name="mode" value="pickup" checked> Pickup</label>
       <label><input type="radio" name="mode" value="delivery"> Delivery</label>
     </fieldset>
-    <button id="submit" type="submit">Find stock</button>
+    <div class="actions">
+      <button id="submit" type="submit">Find stock</button>
+      <button id="watch" type="button" class="secondary">Watch for restock</button>
+    </div>
   </form>
+
+  <p id="watchNote" class="note" hidden></p>
+  <p class="note"><a id="openOptions" href="#">Restock monitor settings</a></p>
 
   <p id="error" class="error" hidden></p>
   <p id="status" class="status" hidden></p>
