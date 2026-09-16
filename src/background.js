@@ -22,11 +22,15 @@ async function ping(chrome, tabId) {
 }
 
 // Returns a tab id on the adapter's host whose content script answers ping, opening one if needed.
-async function getTab(chrome, adapter, sleepMs) {
+// `reloadExisting: false` means "do not reload a tab you did not open": the monitor runs
+// unattended on a one-minute alarm, and reloading a retailer tab the user is reading (every
+// such tab is unresponsive until reloaded after an extension update) is not something that
+// may happen without a button press. The monitor opens its own background tab instead.
+async function getTab(chrome, adapter, sleepMs, { reloadExisting = true } = {}) {
   const tabs = await chrome.tabs.query({ url: `https://${adapter.host}/*` });
   for (const t of tabs) if (await ping(chrome, t.id)) return t.id;
   // A tab opened before the extension was installed/reloaded has no content script until reloaded.
-  let target = tabs[0];
+  let target = reloadExisting ? tabs[0] : null;
   if (target) await chrome.tabs.reload(target.id);
   else target = await chrome.tabs.create({ url: adapter.homeUrl, active: false });
   const deadline = Date.now() + (sleepMs === 0 ? 0 : READY_TIMEOUT_MS);
@@ -43,9 +47,9 @@ async function getTab(chrome, adapter, sleepMs) {
 // messages with side effects (selectStore changes the walmart session).
 const FORWARD_ATTEMPTS = 3;
 
-async function forward(chrome, adapter, msg, sleepMs, attempts = 1) {
+async function forward(chrome, adapter, msg, sleepMs, attempts = 1, tabOptions) {
   for (let attempt = 1; ; attempt++) {
-    const tabId = await getTab(chrome, adapter, sleepMs);
+    const tabId = await getTab(chrome, adapter, sleepMs, tabOptions);
     if (tabId == null) return { ok: false, code: "no_tab", error: ERROR_MESSAGES.no_tab };
     try {
       return await chrome.tabs.sendMessage(tabId, msg);
@@ -57,8 +61,8 @@ async function forward(chrome, adapter, msg, sleepMs, attempts = 1) {
 
 // Routes a message to the content script of the retailer it names. Shared by makeJobs
 // and makeWatcher so retailer routing has one definition instead of two that can drift.
-const forwardToRetailer = (chrome, sleepMs) => (msg) =>
-  forward(chrome, RETAILERS[msg.retailer], msg, sleepMs, FORWARD_ATTEMPTS);
+const forwardToRetailer = (chrome, sleepMs, tabOptions) => (msg) =>
+  forward(chrome, RETAILERS[msg.retailer], msg, sleepMs, FORWARD_ATTEMPTS, tabOptions);
 
 // One job runner per worker. chrome.storage.session lives as long as the browser session and
 // is only readable by extension pages, which is exactly the popup's need.
@@ -71,11 +75,23 @@ export function makeJobs(chrome, sleepMs) {
 
 export const WATCH_ALARM = "watchTick";
 
+// create() with an existing name REPLACES the alarm, which resets its first fire to a
+// minute from now. An MV3 worker is torn down when idle and cold-starts on the next
+// message, so re-creating unconditionally lets a user who opens the popup every 45
+// seconds push the tick out forever, silently. Create it only when it is missing.
+export async function ensureAlarm(chrome) {
+  const existing = await chrome.alarms.get(WATCH_ALARM);
+  if (existing) return false;
+  await chrome.alarms.create(WATCH_ALARM, { periodInMinutes: 1 });
+  return true;
+}
+
 // The restock monitor. `send` is injected so tests never reach Telegram.
 export function makeWatcher(chrome, jobs, sleepMs, send = sendMessage) {
   const storage = chrome.storage?.local;
   return createWatcher({
-    forward: forwardToRetailer(chrome, sleepMs),
+    // Unattended: never reload a tab the user opened (see getTab).
+    forward: forwardToRetailer(chrome, sleepMs, { reloadExisting: false }),
     storage,
     getJob: () => jobs.get(),
     notify: async (text) => {
@@ -141,8 +157,9 @@ if (globalThis.chrome?.runtime?.onMessage) {
   const jobs = makeJobs(chrome);
   const watcher = makeWatcher(chrome, jobs);
   jobs.recover(); // a worker restart means any job left mid-flight cannot finish
-  // create() with an existing name replaces it, so this is safe on every worker start.
-  chrome.alarms.create(WATCH_ALARM, { periodInMinutes: 1 });
+  ensureAlarm(chrome).catch(() => {});
+  // Registered synchronously at top level: a listener added inside a promise callback can
+  // miss the event that woke the worker.
   chrome.alarms.onAlarm.addListener((alarm) => {
     if (alarm.name === WATCH_ALARM) watcher.tick().catch(() => {});
   });

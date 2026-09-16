@@ -123,9 +123,13 @@ Settings {
 
 ## Scheduling
 
-- One alarm, `watchTick`, with `periodInMinutes: 1`. It is created on
-  `chrome.runtime.onInstalled` and again on worker startup, because
-  `chrome.alarms.create` with the same name replaces rather than duplicates.
+- One alarm, `watchTick`, with `periodInMinutes: 1`. Worker startup checks with
+  `chrome.alarms.get` and creates it only when it is missing. Re-creating it
+  unconditionally would be wrong: `chrome.alarms.create` with the same name
+  replaces the alarm, and replacing it resets the first fire to a minute from
+  now. An MV3 worker cold-starts on every message, so a user who opens the popup
+  every 45 seconds would push the tick out indefinitely and the monitor would
+  never run, with no error and no signal.
 - A tick does nothing when `settings.enabled` is false, when `settings.telegram`
   is unset, or when `getJob()` reports a job in phase `lookup` or `searching`.
   The last rule keeps the monitor out of the way of a search the user started,
@@ -177,7 +181,7 @@ Message body for a restock, built from fields the adapters already return:
 ```
 🟢 In stock — PlayStation®5 Pro Console
 Walmart · $827.00
-Delivery to T3A 5S8: In stock · arrives Sep 21 · Ships from DealWiz
+Ships from DealWiz: In stock · arrives Sep 21
 https://www.walmart.ca/en/ip/PlayStation-5-Pro-Console/1SZQHN3LOSE0
 ```
 

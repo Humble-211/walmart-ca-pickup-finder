@@ -86,6 +86,11 @@ failures send one message naming the problem, and a message goes out again when
 checks start working; silence therefore means the monitor is running and nothing
 has changed.
 
+A check has to come from a tab on the retailer's own site, so the monitor opens
+one background tab per watched retailer and leaves it there. It never reloads a
+retailer tab you opened yourself, only the ones it opened; a search you start
+from the popup still reloads a stale tab as it always did.
+
 Chrome must be running for the monitor to work, though the window can be
 minimised. Chrome may stretch alarms when the machine is idle or on battery, so
 treat the cadence as best-effort rather than exact.

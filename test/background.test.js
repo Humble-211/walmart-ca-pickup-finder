@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
-import { handle, makeJobs, makeWatcher, WATCH_ALARM } from "../src/background.js";
+import { handle, makeJobs, makeWatcher, ensureAlarm, WATCH_ALARM } from "../src/background.js";
 
 function fakeChrome({ tabs = [], answers = {}, pingResults } = {}) {
   const created = [];
@@ -219,5 +219,76 @@ describe("makeWatcher", () => {
 describe("watch alarm", () => {
   it("names the alarm the worker listens for", () => {
     expect(WATCH_ALARM).toBe("watchTick");
+  });
+
+  it("creates the tick alarm when there is none", async () => {
+    const alarms = { get: vi.fn(async () => undefined), create: vi.fn(async () => {}) };
+    expect(await ensureAlarm({ alarms })).toBe(true);
+    expect(alarms.create).toHaveBeenCalledWith(WATCH_ALARM, { periodInMinutes: 1 });
+  });
+
+  // create() REPLACES an alarm of the same name, which pushes its first fire a minute out.
+  // An MV3 worker cold-starts on every message, so re-creating on each start lets a user
+  // who opens the popup every 45 seconds starve the tick forever, silently.
+  it("leaves an existing alarm alone, so a cold start cannot push the tick out", async () => {
+    const alarms = { get: vi.fn(async () => ({ name: WATCH_ALARM, periodInMinutes: 1, scheduledTime: 1 })), create: vi.fn(async () => {}) };
+    expect(await ensureAlarm({ alarms })).toBe(false);
+    expect(alarms.create).not.toHaveBeenCalled();
+    expect(alarms.get).toHaveBeenCalledWith(WATCH_ALARM);
+  });
+});
+
+describe("unattended tab handling", () => {
+  const localStorage = () => {
+    let d = {};
+    return { get: async (k) => Object.fromEntries((Array.isArray(k) ? k : [k]).filter((x) => x in d).map((x) => [x, d[x]])), set: async (p) => { d = { ...d, ...p }; } };
+  };
+
+  // Until this branch every forward followed a button press. The monitor runs on an alarm,
+  // so it must not reload a walmart.ca tab the user is in the middle of reading (and after
+  // an extension update every open retailer tab is unresponsive until reloaded).
+  it("never reloads a tab the monitor did not open; it opens its own instead", async () => {
+    const { chrome, created } = fakeChrome({
+      tabs: [{ id: 1, url: "https://www.walmart.ca/en/ip/PS5/1" }],
+      pingResults: { 1: [{ ok: false }] },
+    });
+    chrome.storage = { local: localStorage() };
+    const watcher = makeWatcher(chrome, { get: async () => null }, 0, async () => ({ ok: true }));
+    await watcher.setSettings({ enabled: true, telegram: { token: "t", chatId: "c" } });
+    await watcher.add({ retailer: "walmart", itemId: "1", input: "u", postalCode: "T3A 5S8" });
+    await watcher.tick();
+    expect(chrome.tabs.reload).not.toHaveBeenCalled();
+    expect(created).toHaveLength(1);
+    expect(created[0].url).toBe("https://www.walmart.ca/en");
+    expect(chrome.tabs.sendMessage).toHaveBeenCalledWith(created[0].id, expect.objectContaining({ type: "lookup", mode: "delivery" }));
+  });
+
+  it("reuses the tab it opened rather than planting a new one every tick", async () => {
+    const { chrome, created } = fakeChrome({
+      tabs: [{ id: 1, url: "https://www.walmart.ca/en/ip/PS5/1" }],
+      pingResults: { 1: [{ ok: false }] },
+    });
+    chrome.storage = { local: localStorage() };
+    const watcher = makeWatcher(chrome, { get: async () => null }, 0, async () => ({ ok: true }));
+    await watcher.setSettings({ enabled: true, telegram: { token: "t", chatId: "c" } });
+    const w = await watcher.add({ retailer: "walmart", itemId: "1", input: "u", postalCode: "T3A 5S8" });
+    await watcher.tick();
+    const { watches } = await watcher.list();
+    watches[0].nextCheckAt = w.nextCheckAt - 1;
+    await chrome.storage.local.set({ watches });
+    await watcher.tick();
+    expect(created).toHaveLength(1);
+    expect(chrome.tabs.reload).not.toHaveBeenCalled();
+  });
+
+  // The foreground path is shipped and tested: a button press still reloads a stale tab.
+  it("still reloads a stale tab for a lookup the user asked for", async () => {
+    const { chrome, created } = fakeChrome({
+      tabs: [{ id: 1, url: "https://www.walmart.ca/en" }],
+      pingResults: { 1: [{ ok: false }, { ok: true }] },
+    });
+    await handle({ type: "lookup", retailer: "walmart", itemId: "1", postalCode: "M5V 3L9" }, { chrome, sleepMs: 0 });
+    expect(chrome.tabs.reload).toHaveBeenCalledWith(1);
+    expect(created).toHaveLength(0);
   });
 });
