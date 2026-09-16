@@ -3,3 +3,4 @@ walmart-capture.jsonl
 capture.log
 *.har
 dist/
+.superpowers/
