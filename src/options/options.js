@@ -53,8 +53,8 @@ function watchRow(w) {
   badge.classList.add(w.status ?? "never");
   const pause = li.querySelector(".pause");
   pause.textContent = w.paused ? "Resume" : "Pause";
-  pause.addEventListener("click", async () => { await send({ type: "pauseWatch", id: w.id, paused: !w.paused }); load(); });
-  li.querySelector(".remove").addEventListener("click", async () => { await send({ type: "removeWatch", id: w.id }); load(); });
+  pause.addEventListener("click", async () => { const res = await send({ type: "pauseWatch", id: w.id, paused: !w.paused }); if (res?.ok) load(); });
+  li.querySelector(".remove").addEventListener("click", async () => { const res = await send({ type: "removeWatch", id: w.id }); if (res?.ok) load(); });
   return li;
 }
 
@@ -80,11 +80,11 @@ async function saveSettings() {
   const token = $("token").value.trim();
   const chatId = $("chatId").value.trim();
   const intervalMinutes = Math.min(60, Math.max(1, Number($("interval").value) || 5));
-  await send({
+  const res = await send({
     type: "setWatchSettings",
     settings: { enabled: $("enabled").checked, intervalMinutes, telegram: token && chatId ? { token, chatId } : null },
   });
-  load();
+  if (res?.ok) load();
 }
 
 for (const id of ["token", "chatId", "interval"]) $(id).addEventListener("change", saveSettings);
