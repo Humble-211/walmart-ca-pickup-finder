@@ -1,7 +1,7 @@
 # Multi-Retailer Pickup Finder — Design
 
 Date: 2026-09-15
-Status: implemented for walmart + bestbuy + staples on 2026-09-15; shoppers/gamestop pending discovery
+Status: implemented for walmart + bestbuy + staples + shoppers on 2026-09-15; gamestop pending discovery
 Builds on: `2026-09-15-walmart-ca-pickup-finder-design.md`
 
 ## Goal

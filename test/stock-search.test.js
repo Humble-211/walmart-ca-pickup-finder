@@ -164,3 +164,39 @@ describe("probe options", () => {
     expect(api.mock.calls[0].length).toBe(3); // lat, lon, centre
   });
 });
+
+describe("coveredKm responses", () => {
+  // Stores 10 km apart in a line; the API returns the nearest in-stock stores only (max 3 within 25 km)
+  // and reports how far its answer is known to cover.
+  const line = [];
+  for (let i = 0; i < 30; i++) line.push({ id: `s${i}`, lat: 45, lon: -75 + i * 0.1268 });
+  const lineUser = { lat: 45, lon: -75 };
+  const inStockApi = (inStock) => vi.fn(async (lat, lon) => {
+    const hits = line
+      .map((s) => ({ s, d: haversineKm({ lat, lon }, s) })).filter(({ s, d }) => d <= 25 && inStock.has(s.id)).sort((a, b) => a.d - b.d).slice(0, 3);
+    return { stores: hits.map(({ s, d }) => ({ id: s.id, name: s.id, status: "available", distanceKm: d, url: null })), coveredKm: hits.length === 3 ? hits[2].d : 25 };
+  });
+  const lineNearby = () => line.slice(0, 3).map((s) => ({ id: s.id, status: "out_of_stock", distanceKm: haversineKm(lineUser, s) }));
+
+  it("treats every catalog store within coveredKm of the centre as checked", async () => {
+    const api = inStockApi(new Set(["s12"]));
+    const res = await findNearestInStock({ nearby: lineNearby(), user: lineUser, catalog: line, fetchAround: api, probe: { maxCount: 3, radiusKm: 25, centroids: false } });
+    expect(res.inStock.map((s) => s.id)).toEqual(["s12"]);
+    expect(res.complete).toBe(true);
+    // ~120 km to s12 with 25 km coverage per empty probe: a handful of calls, not one per out-of-stock store.
+    expect(api.mock.calls.length).toBeLessThanOrEqual(6);
+    expect(res.checkedIds).toContain("s5");
+  });
+  it("only covers up to the farthest hit when the response is full", async () => {
+    const api = inStockApi(new Set(["s4", "s5", "s6", "s9"]));
+    const res = await findNearestInStock({ nearby: lineNearby(), user: lineUser, catalog: line, fetchAround: api, maxCalls: 1, probe: { maxCount: 3, radiusKm: 25, centroids: false } });
+    expect(res.inStock.map((s) => s.id)).toEqual(["s4", "s5", "s6"]);
+    expect(res.checkedIds).not.toContain("s9");
+    expect(res.complete).toBe(true); // nothing uncovered is nearer than s4
+  });
+  it("still accepts a plain array response", async () => {
+    const api = vi.fn(async () => []);
+    const res = await findNearestInStock({ nearby: lineNearby(), user: lineUser, catalog: line, fetchAround: api, maxCalls: 100, probe: { maxCount: 3, radiusKm: 25, centroids: false } });
+    expect(res.complete).toBe(true);
+  });
+});

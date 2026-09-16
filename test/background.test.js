@@ -56,6 +56,29 @@ describe("background handle", () => {
     expect(chrome.tabs.sendMessage).toHaveBeenCalledWith(2, expect.objectContaining({ type: "lookup" }));
     expect(res.echo.itemId).toBe("19446111");
   });
+  it("re-sends a lookup when the content script vanished mid-answer (page reloaded), but never a selectStore", async () => {
+    const { chrome } = fakeChrome({ tabs: [{ id: 1, url: "https://www.shoppersdrugmart.ca/" }] });
+    const original = chrome.tabs.sendMessage.getMockImplementation();
+    let failures = 2;
+    chrome.tabs.sendMessage.mockImplementation(async (tabId, msg) => {
+      if (msg.type !== "ping" && failures-- > 0) throw new Error("The message port closed before a response was received.");
+      return original(tabId, msg);
+    });
+    const res = await handle({ type: "lookup", retailer: "shoppers", itemId: "625273036947", postalCode: "M5V 3L9" }, { chrome, sleepMs: 0 });
+    expect(res.echo.itemId).toBe("625273036947");
+    expect(chrome.tabs.sendMessage.mock.calls.filter((c) => c[1].type === "lookup")).toHaveLength(3);
+    failures = 1;
+    const sel = await handle({ type: "selectStore", retailer: "shoppers", store: {}, postalCode: "M5V 3L9", itemUrl: "https://www.shoppersdrugmart.ca/x/p/BB_1" }, { chrome, sleepMs: 0 });
+    expect(sel).toMatchObject({ ok: false, code: "no_tab" });
+    expect(chrome.tabs.sendMessage.mock.calls.filter((c) => c[1].type === "selectStore")).toHaveLength(1);
+  });
+  it("gives up with no_tab after three failed sends", async () => {
+    const { chrome } = fakeChrome({ tabs: [{ id: 1, url: "https://www.walmart.ca/en" }] });
+    const original = chrome.tabs.sendMessage.getMockImplementation();
+    chrome.tabs.sendMessage.mockImplementation(async (tabId, msg) => { if (msg.type !== "ping") throw new Error("port closed"); return original(tabId, msg); });
+    expect(await handle({ type: "lookup", retailer: "walmart", itemId: "1", postalCode: "M5V 3L9" }, { chrome, sleepMs: 0 })).toMatchObject({ ok: false, code: "no_tab" });
+    expect(chrome.tabs.sendMessage.mock.calls.filter((c) => c[1].type === "lookup")).toHaveLength(3);
+  });
   it("getTab retries the ping after a reload and still finds the tab", async () => {
     const { chrome } = fakeChrome({
       tabs: [{ id: 1, url: "https://www.walmart.ca/en" }],

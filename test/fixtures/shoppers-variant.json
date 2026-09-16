@@ -1,0 +1,357 @@
+{
+  "badges": [
+    {
+      "name": "Prepared in Canada",
+      "uid": "prepared_in_canada"
+    },
+    {
+      "name": "Sale",
+      "uid": "onsale"
+    }
+  ],
+  "baseOptimumPoints": 210,
+  "bonusOptimumPoints": 0,
+  "bonusOptimumPointsText": "",
+  "bopisIneligible": false,
+  "brandCode": "WEBBER",
+  "brandName": "Webber",
+  "brandUrl": "/shop/webber/c/WEBBER",
+  "code": "SDM_625273036947",
+  "description": "Magnesium Bisglycinate from Webber Naturals is a more absorbable form of magnesium that is calming and gentle on the digestive system. As it does not require stomach acidity to be absorbed, it is considered a gentle form of magnesium. Magnesium helps maintain normal muscle function, including the heart muscle, and helps in bone development, tissue formation, energy metabolism, and supporting normal electrolyte balance.<br><p><strong>Qu�bec regulation does not allow pharmacist-owners to award PC Optimum bonus points on any medication or activity related to the practice of pharmacy.</strong></p></br> \n<br><p>Product information is provided by the product vendor. This content is a summary for informational purposes only and does not have all possible information about this product. It should not be used as a substitute for advice from health care professionals, as this information alone does not assure that this product is safe, effective, or appropriate for you. For more detailed information on this product, including reported and possible side effects and contraindications, refer to the manufacturer's monograph, or speak with a health care provider.</p></br>",
+  "effectivePrice": {
+    "currencyIso": "CAD",
+    "endDate": "2026-09-18T03:59:59Z",
+    "formattedValue": "$14.99",
+    "value": 14.99
+  },
+  "featuresBenefit": "• Helps support normal muscle function, including the heart muscle\n• Helps in the development of bones and teeth\n• Helps in tissue formation and energy metabolism\n• Easier-to-absorb bisglycinate form of magnesium\n• Easy-to-swallow vegetarian capsules",
+  "howToApply": "<p>Recommended dosage (adults): 1 capsule daily or as directed by a physician.</p><br><strong> Warnings</strong></br>Keep out of reach of children.",
+  "images": [
+    {
+      "format": "size100",
+      "galleryIndex": 1,
+      "imageType": "GALLERY",
+      "url": "https://digital.loblaws.ca/SDM/SDM_625273036947/en/1/625273036947_en_01_v3_120.jpeg"
+    },
+    {
+      "format": "size130",
+      "galleryIndex": 1,
+      "imageType": "GALLERY",
+      "url": "https://digital.loblaws.ca/SDM/SDM_625273036947/en/1/625273036947_en_01_v3_120.jpeg"
+    },
+    {
+      "format": "size200",
+      "galleryIndex": 1,
+      "imageType": "GALLERY",
+      "url": "https://digital.loblaws.ca/SDM/SDM_625273036947/en/1/625273036947_en_01_v3_250.jpeg"
+    },
+    {
+      "format": "size260",
+      "galleryIndex": 1,
+      "imageType": "GALLERY",
+      "url": "https://digital.loblaws.ca/SDM/SDM_625273036947/en/1/625273036947_en_01_v3_250.jpeg"
+    },
+    {
+      "format": "size400",
+      "galleryIndex": 1,
+      "imageType": "GALLERY",
+      "url": "https://digital.loblaws.ca/SDM/SDM_625273036947/en/1/625273036947_en_01_v3_400.jpeg"
+    },
+    {
+      "format": "size800",
+      "galleryIndex": 1,
+      "imageType": "GALLERY",
+      "url": "https://digital.loblaws.ca/SDM/SDM_625273036947/en/1/625273036947_en_01_v3_800.jpeg"
+    },
+    {
+      "format": "size1600",
+      "galleryIndex": 1,
+      "imageType": "GALLERY",
+      "url": "https://digital.loblaws.ca/SDM/SDM_625273036947/en/1/625273036947_en_01_v3_1200.jpeg"
+    },
+    {
+      "format": "size100",
+      "galleryIndex": 2,
+      "imageType": "GALLERY",
+      "url": "https://digital.loblaws.ca/SDM/SDM_625273036947/en/2/625273036947_enfr_02_v2_120.jpeg"
+    },
+    {
+      "format": "size130",
+      "galleryIndex": 2,
+      "imageType": "GALLERY",
+      "url": "https://digital.loblaws.ca/SDM/SDM_625273036947/en/2/625273036947_enfr_02_v2_120.jpeg"
+    },
+    {
+      "format": "size200",
+      "galleryIndex": 2,
+      "imageType": "GALLERY",
+      "url": "https://digital.loblaws.ca/SDM/SDM_625273036947/en/2/625273036947_enfr_02_v2_250.jpeg"
+    },
+    {
+      "format": "size260",
+      "galleryIndex": 2,
+      "imageType": "GALLERY",
+      "url": "https://digital.loblaws.ca/SDM/SDM_625273036947/en/2/625273036947_enfr_02_v2_250.jpeg"
+    },
+    {
+      "format": "size400",
+      "galleryIndex": 2,
+      "imageType": "GALLERY",
+      "url": "https://digital.loblaws.ca/SDM/SDM_625273036947/en/2/625273036947_enfr_02_v2_400.jpeg"
+    },
+    {
+      "format": "size800",
+      "galleryIndex": 2,
+      "imageType": "GALLERY",
+      "url": "https://digital.loblaws.ca/SDM/SDM_625273036947/en/2/625273036947_enfr_02_v2_800.jpeg"
+    },
+    {
+      "format": "size1600",
+      "galleryIndex": 2,
+      "imageType": "GALLERY",
+      "url": "https://digital.loblaws.ca/SDM/SDM_625273036947/en/2/625273036947_enfr_02_v2_1200.jpeg"
+    },
+    {
+      "format": "size100",
+      "galleryIndex": 3,
+      "imageType": "GALLERY",
+      "url": "https://digital.loblaws.ca/SDM/SDM_625273036947/en/3/625273036947_enfr_03_v2_120.jpeg"
+    },
+    {
+      "format": "size130",
+      "galleryIndex": 3,
+      "imageType": "GALLERY",
+      "url": "https://digital.loblaws.ca/SDM/SDM_625273036947/en/3/625273036947_enfr_03_v2_120.jpeg"
+    },
+    {
+      "format": "size200",
+      "galleryIndex": 3,
+      "imageType": "GALLERY",
+      "url": "https://digital.loblaws.ca/SDM/SDM_625273036947/en/3/625273036947_enfr_03_v2_250.jpeg"
+    },
+    {
+      "format": "size260",
+      "galleryIndex": 3,
+      "imageType": "GALLERY",
+      "url": "https://digital.loblaws.ca/SDM/SDM_625273036947/en/3/625273036947_enfr_03_v2_250.jpeg"
+    },
+    {
+      "format": "size400",
+      "galleryIndex": 3,
+      "imageType": "GALLERY",
+      "url": "https://digital.loblaws.ca/SDM/SDM_625273036947/en/3/625273036947_enfr_03_v2_400.jpeg"
+    },
+    {
+      "format": "size800",
+      "galleryIndex": 3,
+      "imageType": "GALLERY",
+      "url": "https://digital.loblaws.ca/SDM/SDM_625273036947/en/3/625273036947_enfr_03_v2_800.jpeg"
+    },
+    {
+      "format": "size1600",
+      "galleryIndex": 3,
+      "imageType": "GALLERY",
+      "url": "https://digital.loblaws.ca/SDM/SDM_625273036947/en/3/625273036947_enfr_03_v2_1200.jpeg"
+    },
+    {
+      "format": "size100",
+      "galleryIndex": 4,
+      "imageType": "GALLERY",
+      "url": "https://digital.loblaws.ca/SDM/SDM_625273036947/en/4/625273036947_enfr_04_v2_120.jpeg"
+    },
+    {
+      "format": "size130",
+      "galleryIndex": 4,
+      "imageType": "GALLERY",
+      "url": "https://digital.loblaws.ca/SDM/SDM_625273036947/en/4/625273036947_enfr_04_v2_120.jpeg"
+    },
+    {
+      "format": "size200",
+      "galleryIndex": 4,
+      "imageType": "GALLERY",
+      "url": "https://digital.loblaws.ca/SDM/SDM_625273036947/en/4/625273036947_enfr_04_v2_250.jpeg"
+    },
+    {
+      "format": "size260",
+      "galleryIndex": 4,
+      "imageType": "GALLERY",
+      "url": "https://digital.loblaws.ca/SDM/SDM_625273036947/en/4/625273036947_enfr_04_v2_250.jpeg"
+    },
+    {
+      "format": "size400",
+      "galleryIndex": 4,
+      "imageType": "GALLERY",
+      "url": "https://digital.loblaws.ca/SDM/SDM_625273036947/en/4/625273036947_enfr_04_v2_400.jpeg"
+    },
+    {
+      "format": "size800",
+      "galleryIndex": 4,
+      "imageType": "GALLERY",
+      "url": "https://digital.loblaws.ca/SDM/SDM_625273036947/en/4/625273036947_enfr_04_v2_800.jpeg"
+    },
+    {
+      "format": "size1600",
+      "galleryIndex": 4,
+      "imageType": "GALLERY",
+      "url": "https://digital.loblaws.ca/SDM/SDM_625273036947/en/4/625273036947_enfr_04_v2_1200.jpeg"
+    },
+    {
+      "format": "size100",
+      "galleryIndex": 5,
+      "imageType": "GALLERY",
+      "url": "https://digital.loblaws.ca/SDM/SDM_625273036947/en/5/625273036947_enfr_05_v2_120.jpeg"
+    },
+    {
+      "format": "size130",
+      "galleryIndex": 5,
+      "imageType": "GALLERY",
+      "url": "https://digital.loblaws.ca/SDM/SDM_625273036947/en/5/625273036947_enfr_05_v2_120.jpeg"
+    },
+    {
+      "format": "size200",
+      "galleryIndex": 5,
+      "imageType": "GALLERY",
+      "url": "https://digital.loblaws.ca/SDM/SDM_625273036947/en/5/625273036947_enfr_05_v2_250.jpeg"
+    },
+    {
+      "format": "size260",
+      "galleryIndex": 5,
+      "imageType": "GALLERY",
+      "url": "https://digital.loblaws.ca/SDM/SDM_625273036947/en/5/625273036947_enfr_05_v2_250.jpeg"
+    },
+    {
+      "format": "size400",
+      "galleryIndex": 5,
+      "imageType": "GALLERY",
+      "url": "https://digital.loblaws.ca/SDM/SDM_625273036947/en/5/625273036947_enfr_05_v2_400.jpeg"
+    },
+    {
+      "format": "size800",
+      "galleryIndex": 5,
+      "imageType": "GALLERY",
+      "url": "https://digital.loblaws.ca/SDM/SDM_625273036947/en/5/625273036947_enfr_05_v2_800.jpeg"
+    },
+    {
+      "format": "size1600",
+      "galleryIndex": 5,
+      "imageType": "GALLERY",
+      "url": "https://digital.loblaws.ca/SDM/SDM_625273036947/en/5/625273036947_enfr_05_v2_1200.jpeg"
+    },
+    {
+      "format": "size100",
+      "galleryIndex": 6,
+      "imageType": "GALLERY",
+      "url": "https://digital.loblaws.ca/SDM/SDM_625273036947/en/6/625273036947_enfr_06_v2_120.jpeg"
+    },
+    {
+      "format": "size130",
+      "galleryIndex": 6,
+      "imageType": "GALLERY",
+      "url": "https://digital.loblaws.ca/SDM/SDM_625273036947/en/6/625273036947_enfr_06_v2_120.jpeg"
+    },
+    {
+      "format": "size200",
+      "galleryIndex": 6,
+      "imageType": "GALLERY",
+      "url": "https://digital.loblaws.ca/SDM/SDM_625273036947/en/6/625273036947_enfr_06_v2_250.jpeg"
+    },
+    {
+      "format": "size260",
+      "galleryIndex": 6,
+      "imageType": "GALLERY",
+      "url": "https://digital.loblaws.ca/SDM/SDM_625273036947/en/6/625273036947_enfr_06_v2_250.jpeg"
+    },
+    {
+      "format": "size400",
+      "galleryIndex": 6,
+      "imageType": "GALLERY",
+      "url": "https://digital.loblaws.ca/SDM/SDM_625273036947/en/6/625273036947_enfr_06_v2_400.jpeg"
+    },
+    {
+      "format": "size800",
+      "galleryIndex": 6,
+      "imageType": "GALLERY",
+      "url": "https://digital.loblaws.ca/SDM/SDM_625273036947/en/6/625273036947_enfr_06_v2_800.jpeg"
+    },
+    {
+      "format": "size1600",
+      "galleryIndex": 6,
+      "imageType": "GALLERY",
+      "url": "https://digital.loblaws.ca/SDM/SDM_625273036947/en/6/625273036947_enfr_06_v2_1200.jpeg"
+    }
+  ],
+  "ingredients": "Medicinal Ingredients :\n  Each vegetarian capsule contains: \n Magnesium [buffered magnesium bisglycinate (bisglycinate, oxide)] :  200 mg\n\nNon-medicinal Ingredients : Vegetarian capsule (carbohydrate gum, purified water), microcrystalline cellulose, vegetable grade magnesium stearate (lubricant), silica.",
+  "isDermSkincare": false,
+  "isFavouriteProduct": false,
+  "isLuxury": false,
+  "isOutOfStock": false,
+  "isScheduleThree": false,
+  "isThoughtfulChoices": false,
+  "maxAddToCartQuantity": 6,
+  "modifaceEnabled": false,
+  "multiBadges": [
+    {
+      "name": "Prepared in Canada",
+      "uid": "prepared_in_canada"
+    },
+    {
+      "name": "Sale",
+      "uid": "onsale"
+    }
+  ],
+  "name": "Magnesium Bisglycinate 200 mg",
+  "optimumPromotions": [],
+  "potentialPromotions": [],
+  "price": {
+    "currencyIso": "CAD",
+    "endDate": "2099-12-31T23:59:59Z",
+    "formattedValue": "$24.99",
+    "value": 24.99
+  },
+  "taxInfo": "Plus tax",
+  "productType": "HEALTH",
+  "purchasable": true,
+  "sample": false,
+  "size": "120.0",
+  "specialPrice": {
+    "currencyIso": "CAD",
+    "endDate": "2026-09-18T03:59:59Z",
+    "formattedValue": "$14.99",
+    "value": 14.99
+  },
+  "stock": {
+    "stockLevel": 56
+  },
+  "url": "/webber-magnesium-bisglycinate-200-mg/p/BB_625273036947?variantCode=625273036947",
+  "canonicalUrl": "https://www.shoppersdrugmart.ca/webber-magnesium-bisglycinate-200-mg/p/BB_625273036947?variantCode=625273036947",
+  "jsonLd": {
+    "@context": "https://schema.org/",
+    "@type": "Product",
+    "name": "Magnesium Bisglycinate 200 mg",
+    "description": "Magnesium Bisglycinate from Webber Naturals is a more absorbable form of magnesium that is calming and gentle on the digestive system. As it does not require stomach acidity to be absorbed, it is considered a gentle form of magnesium. Magnesium helps maintain normal muscle function, including the heart muscle, and helps in bone development, tissue formation, energy metabolism, and supporting normal electrolyte balance. Qu�bec regulation does not allow pharmacist-owners to award PC Optimum bonus points on any medication or activity related to the practice of pharmacy. Product information is provided by the product vendor. This content is a summary for informational purposes only and does not have all possible information about this product. It should not be used as a substitute for advice from health care professionals, as this information alone does not assure that this product is safe, effective, or appropriate for you. For more detailed information on this product, including reported and possible side effects and contraindications, refer to the manufacturer's monograph, or speak with a health care provider.",
+    "sku": "SDM_625273036947",
+    "image": [
+      "https://digital.loblaws.ca/SDM/SDM_625273036947/en/1/625273036947_en_01_v3_1200.jpeg",
+      "https://digital.loblaws.ca/SDM/SDM_625273036947/en/2/625273036947_enfr_02_v2_1200.jpeg",
+      "https://digital.loblaws.ca/SDM/SDM_625273036947/en/3/625273036947_enfr_03_v2_1200.jpeg",
+      "https://digital.loblaws.ca/SDM/SDM_625273036947/en/4/625273036947_enfr_04_v2_1200.jpeg",
+      "https://digital.loblaws.ca/SDM/SDM_625273036947/en/5/625273036947_enfr_05_v2_1200.jpeg",
+      "https://digital.loblaws.ca/SDM/SDM_625273036947/en/6/625273036947_enfr_06_v2_1200.jpeg"
+    ],
+    "brand": {
+      "@type": "Brand",
+      "name": "Webber"
+    },
+    "offers": {
+      "@type": "Offer",
+      "price": "14.99",
+      "priceCurrency": "CAD",
+      "availability": "https://schema.org/InStock",
+      "itemCondition": "https://schema.org/NewCondition",
+      "url": "https://www.shoppersdrugmart.ca/webber-magnesium-bisglycinate-200-mg/p/BB_625273036947?variantCode=625273036947"
+    }
+  },
+  "isOnSale": true,
+  "infoCards": [],
+  "showBackInStock": false
+}

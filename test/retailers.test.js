@@ -10,6 +10,10 @@ describe("parseProductUrl", () => {
     expect(parseProductUrl("https://www.staples.ca/products/3082604-en-brother-hl-l2405w-printer"))
       .toEqual({ retailer: "staples", itemId: "3082604-en-brother-hl-l2405w-printer" });
   });
+  it("routes a shoppersdrugmart.ca product URL to the shoppers adapter with the variant code as item id", () => {
+    expect(parseProductUrl("https://www.shoppersdrugmart.ca/bioderma-sensibio-h2o/p/BB_3701129812075?variantCode=3701129812105"))
+      .toEqual({ retailer: "shoppers", itemId: "3701129812105" });
+  });
   it("routes a walmart.ca product URL to the walmart adapter", () => {
     expect(parseProductUrl("https://www.walmart.ca/en/ip/PlayStation-5-Pro-Console/1SZQHN3LOSE0"))
       .toEqual({ retailer: "walmart", itemId: "1SZQHN3LOSE0" });

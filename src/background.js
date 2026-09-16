@@ -32,13 +32,21 @@ async function getTab(chrome, adapter, sleepMs) {
   return null;
 }
 
-async function forward(chrome, adapter, msg, sleepMs) {
-  const tabId = await getTab(chrome, adapter, sleepMs);
-  if (tabId == null) return { ok: false, code: "no_tab", error: ERROR_MESSAGES.no_tab };
-  try {
-    return await chrome.tabs.sendMessage(tabId, msg);
-  } catch {
-    return { ok: false, code: "no_tab", error: ERROR_MESSAGES.no_tab };
+// A content script can vanish while it is answering: some sites reload a freshly opened
+// tab on their own (shoppersdrugmart.ca does so ~15 s after first load). A failed send is
+// therefore retried against a freshly located, ping-verified tab. Callers must not retry
+// messages with side effects (selectStore changes the walmart session).
+const FORWARD_ATTEMPTS = 3;
+
+async function forward(chrome, adapter, msg, sleepMs, attempts = 1) {
+  for (let attempt = 1; ; attempt++) {
+    const tabId = await getTab(chrome, adapter, sleepMs);
+    if (tabId == null) return { ok: false, code: "no_tab", error: ERROR_MESSAGES.no_tab };
+    try {
+      return await chrome.tabs.sendMessage(tabId, msg);
+    } catch {
+      if (attempt >= attempts) return { ok: false, code: "no_tab", error: ERROR_MESSAGES.no_tab };
+    }
   }
 }
 
@@ -49,7 +57,7 @@ export async function handle(msg, { chrome = globalThis.chrome, sleepMs } = {}) 
   switch (msg?.type) {
     case "lookup":
     case "findInStock":
-      return forward(chrome, adapter, msg, sleepMs);
+      return forward(chrome, adapter, msg, sleepMs, FORWARD_ATTEMPTS);
     case "selectStore": {
       // Validate before forwarding: a refused URL must never reach the content script,
       // which may change store selection for the whole retailer session (e.g. walmart's setPickup).

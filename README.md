@@ -1,7 +1,7 @@
-# Pickup Finder (walmart.ca, bestbuy.ca, staples.ca)
+# Pickup Finder (walmart.ca, bestbuy.ca, staples.ca, shoppersdrugmart.ca)
 
-Chrome extension. Paste a product URL from Walmart, Best Buy, or Staples (Walmart
-item IDs still accepted) and a Canadian postal code; it lists the nearest stores
+Chrome extension. Paste a product URL from Walmart, Best Buy, Staples, or Shoppers
+Drug Mart (Walmart item IDs still accepted) and a Canadian postal code; it lists the nearest stores
 of that retailer with pickup status and then searches the whole country for the
 nearest store that has the item in stock.
 
@@ -19,8 +19,8 @@ npm run build      # writes dist/
 
 Chrome → `chrome://extensions` → Developer mode → Load unpacked → choose `dist/`.
 
-The extension needs a tab on the retailer's site (walmart.ca or bestbuy.ca); it
-opens one if none exists. If walmart.ca shows its "press and hold" bot check,
+The extension needs a tab on the retailer's site (walmart.ca, bestbuy.ca, staples.ca
+or shoppersdrugmart.ca); it opens one if none exists. If walmart.ca shows its "press and hold" bot check,
 complete it in that tab and run the lookup again.
 
 ## How it works
@@ -31,12 +31,12 @@ Each retailer has an adapter in `src/retailers/<name>/`:
 - `content.js` runs on that domain and answers inventory lookups.
 
 Endpoints are documented in `docs/walmart-ca-endpoints.md`, `docs/bestbuy-ca-endpoints.md`,
-and `docs/staples-ca-endpoints.md`.
+`docs/staples-ca-endpoints.md` and `docs/shoppers-ca-endpoints.md`.
 Design: `docs/superpowers/specs/`.
 
 For Walmart, clicking Order pickup calls the setPickup mutation, which changes the
 selected pickup store for your whole walmart.ca session, not just the opened tab.
-For Best Buy and Staples, store rows open the product page.
+For Best Buy, Staples and Shoppers, store rows open the product page.
 
 ## Adding a retailer
 
@@ -74,16 +74,45 @@ item IDs, to help spot the right requests before updating the hashes above.
 `tools/eval.js "<js expression>"` runs JavaScript inside that tab, useful for
 probing variables against the live endpoint.
 
+## End-to-end check
+
+```sh
+npm run build
+node tools/e2e-popup.mjs "https://www.shoppersdrugmart.ca/x/p/BB_625273036947|M5V 3L9" "<url>|<postal>" ...
+```
+
+starts a throwaway Chrome, installs `dist/` over the DevTools protocol
+(`Extensions.loadUnpacked`; Chrome 137+ ignores `--load-extension`), runs each
+lookup through the real popup and prints what it shows. It must not use
+`--remote-debugging-pipe`: that sets `navigator.webdriver`, and shoppersdrugmart.ca
+answers such a browser with 403 on every request.
+
 ## Store lists
 
 `tools/build-store-list.mjs` (Walmart API) and `tools/build-store-list-pages.mjs`
 (Walmart store pages, not rate-limited) regenerate the store coordinate list in
 `src/retailers/walmart/stores-ca.json`. `tools/build-bestbuy-stores.mjs`
 regenerates `src/retailers/bestbuy/stores-ca.json`. `tools/build-staples-stores.mjs`
-regenerates `src/retailers/staples/stores-ca.json`.
+regenerates `src/retailers/staples/stores-ca.json`. `tools/build-shoppers-stores.mjs`
+regenerates `src/retailers/shoppers/stores-ca.json` (1,059 stores; no Quebec, where the
+banner is Pharmaprix on a different site).
 
 Staples returns only the 5 nearest pickup-capable stores to a postal code (no way
 to specify a store list), so the nationwide search probes outward from the catalog,
 5 stores at a time, like Walmart. Staples' availability API only covers ~90 km
 around the postal code, so a postal code with no Staples in that radius gets no
 nationwide search yet (documented follow-up in `docs/staples-ca-endpoints.md`).
+
+Shoppers Drug Mart's store-stock endpoint takes only coordinates (the site geocodes
+postal codes with Google Maps), so the extension locates a postal code by the centroid
+of its forward sortation area from `src/lib/fsa-ca.json` (GeoNames postal-code data,
+CC BY 4.0, https://www.geonames.org/; regenerate with `tools/build-fsa-list.mjs`).
+Distances shown for Shoppers are measured from that centroid: a couple of km off in
+cities, tens of km in rural (`A0A`) areas. The endpoint returns the 10 nearest stores
+within ~20 km, or only those with stock when asked, so the nationwide search probes
+outward 20 km at a time, asking for in-stock stores only
+(`docs/shoppers-ca-endpoints.md`). Calls need the site's public `x-apikey`; if it
+rotates, update `API_KEY` in `src/retailers/shoppers/api.js` from a captured request.
+If the popup says Shoppers' bot protection blocked the request, reload the
+shoppersdrugmart.ca tab (open any product page there) and retry; Akamai rejects
+sessions it considers automated.
