@@ -1,7 +1,7 @@
 // The restock monitor's settings and watchlist. Every change goes through the
 // background worker, which owns the storage, so two open copies of this page
 // cannot write over each other.
-import { rateNote } from "../lib/watch.js";
+import { rateNote, telegramSettings } from "../lib/watch.js";
 import { formatError } from "../lib/errors.js";
 import { RETAILERS } from "../retailers/index.js";
 
@@ -78,11 +78,19 @@ function watchRow(w) {
   return li;
 }
 
+// Never write over the field the user is currently in. A save fires when they
+// leave one field, and its reply lands while they are already typing in the next
+// one; without this guard that reply overwrites what they are in the middle of.
+function setField(id, value) {
+  const el = $(id);
+  if (document.activeElement !== el) el.value = value;
+}
+
 function render({ watches, settings }) {
-  $("token").value = settings.telegram?.token ?? "";
-  $("chatId").value = settings.telegram?.chatId ?? "";
+  setField("token", settings.telegram?.token ?? "");
+  setField("chatId", settings.telegram?.chatId ?? "");
   $("enabled").checked = Boolean(settings.enabled);
-  $("interval").value = settings.intervalMinutes;
+  setField("interval", settings.intervalMinutes);
   $("rate").textContent = rateNote(watches);
   $("empty").hidden = watches.length > 0;
   $("watches").replaceChildren(...watches.map(watchRow));
@@ -102,7 +110,7 @@ async function saveSettings() {
   const intervalMinutes = Math.min(60, Math.max(1, Number($("interval").value) || 5));
   const res = await send({
     type: "setWatchSettings",
-    settings: { enabled: $("enabled").checked, intervalMinutes, telegram: token && chatId ? { token, chatId } : null },
+    settings: { enabled: $("enabled").checked, intervalMinutes, telegram: telegramSettings(token, chatId) },
   });
   if (res?.ok) load();
 }

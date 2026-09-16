@@ -47,6 +47,19 @@ export function rateNote(watches) {
   return `About ${(perMinute * 5).toFixed(1)} Walmart checks every 5 minutes. Walmart starts refusing at roughly 25 in that window, so keep some room for your own searches.`;
 }
 
+// The telegram block to store for two fields the user may have only half filled.
+// Keeping a partial pair is what lets someone type the token, move to the next
+// field, and still find their token there: storing null the moment one side was
+// empty made the options page render the emptiness straight back out, wiping what
+// had just been typed and leaving the form impossible to fill. A partial pair is
+// still unconfigured as far as `tick` is concerned, because that guard requires
+// both fields.
+export function telegramSettings(token, chatId) {
+  const t = String(token ?? "").trim();
+  const c = String(chatId ?? "").trim();
+  return t || c ? { token: t, chatId: c } : null;
+}
+
 export function createWatcher({ forward, storage, getJob, notify, now = Date.now, random = Math.random }) {
   let tickRunning = false;
 

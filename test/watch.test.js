@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
-import { createWatcher, alertText, rateNote, WATCHES_KEY, SETTINGS_KEY, DEFAULT_SETTINGS } from "../src/lib/watch.js";
+import { createWatcher, alertText, rateNote, telegramSettings, WATCHES_KEY, SETTINGS_KEY, DEFAULT_SETTINGS } from "../src/lib/watch.js";
 import { createWatch } from "../src/lib/watch-entry.js";
 import { ERROR_MESSAGES } from "../src/lib/errors.js";
 
@@ -412,5 +412,33 @@ describe("rateNote", () => {
     expect(rateNote([w()])).toContain("Walmart starts refusing at roughly 25");
     expect(rateNote([w({ intervalMinutes: 0 })])).toContain("About 1.0 Walmart checks");
     expect(rateNote([w({ intervalMinutes: undefined })])).toContain("About 1.0 Walmart checks");
+  });
+});
+
+// Regression: entering the token and moving to the next field emptied the token
+// field and left telegram null forever, so the form could never be filled. The
+// page renders back whatever was stored, so storing null the moment one side was
+// empty erased what had just been typed.
+describe("telegramSettings", () => {
+  it("keeps a half-filled pair, so the page renders back what was typed", () => {
+    expect(telegramSettings("123456:ABC", "")).toEqual({ token: "123456:ABC", chatId: "" });
+    expect(telegramSettings("", "999")).toEqual({ token: "", chatId: "999" });
+  });
+
+  it("is null only when the user has typed nothing at all", () => {
+    expect(telegramSettings("", "")).toBeNull();
+    expect(telegramSettings("   ", " ")).toBeNull();
+    expect(telegramSettings(null, undefined)).toBeNull();
+  });
+
+  it("trims what it stores, so a pasted token with a stray space still works", () => {
+    expect(telegramSettings("  123456:ABC  ", " 999 ")).toEqual({ token: "123456:ABC", chatId: "999" });
+  });
+
+  it("leaves a half-filled pair unconfigured, so the monitor does not start on a broken credential", async () => {
+    const half = { enabled: true, telegram: telegramSettings("123456:ABC", ""), intervalMinutes: 5 };
+    const { watcher, forward } = setup({ watches: [due()], settings: half });
+    expect(await watcher.tick()).toEqual({ checked: 0, skipped: "unconfigured" });
+    expect(forward).not.toHaveBeenCalled();
   });
 });
