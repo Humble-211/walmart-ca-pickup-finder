@@ -25,8 +25,8 @@ async function handle(msg) {
       return { ok: true };
     case "lookup": {
       const sku = skuOf(msg.itemId);
-      const [item, stores] = await Promise.all([api.getItem(msg.itemId), api.getAvailability(sku, msg.postalCode)]);
-      return { ok: true, item, stores: withCatalogNames(stores, catalogById).map((s) => ({ ...s, url: item.url })) };
+      const [item, stores, delivery] = await Promise.all([api.getItem(msg.itemId), api.getAvailability(sku, msg.postalCode), api.getDelivery(sku, msg.postalCode)]);
+      return { ok: true, item: { ...item, delivery }, stores: withCatalogNames(stores, catalogById).map((s) => ({ ...s, url: item.url })) };
     }
     case "findInStock": {
       if (!Array.isArray(msg.nearby)) return { ok: false, code: "unknown", error: "findInStock needs the nearby store list." };

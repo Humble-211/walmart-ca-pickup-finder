@@ -157,3 +157,16 @@ The extension only calls it when the user clicks "Order pickup" for a store.
 
 `setFulfillmentIntent` (mutation, sets PICKUP/DELIVERY tab preference): not required
 for the flow above. `GlobalIntentCenter`, `Header`, `HomePage*`, `IntlAdV2`: page chrome and ads.
+
+## Delivery (ship-to-home): not wired up
+
+`ItemById` already returns delivery for the **session's** saved location:
+`shippingOption {availabilityStatus, deliveryDate}`, `fulfillmentSummary[]` and
+`fulfillmentLabel[] {message: "Free delivery over $35, arrives today to Toronto, M1J 2H1",
+postalCode, deliveryDate}`. The variables the persisted query takes carry no postal
+code, and a probe of `postalCode` / `pCode` / `zipCode` / `location` ran into the
+usual 429 penalty box before it could prove anything either way. Changing the
+session's location (the way `setPickup` changes the pickup store) would answer for a
+typed postal code, but it is a side effect on the user's walmart.ca session, so the
+walmart adapter leaves `item.delivery` unset and the popup's delivery line stays
+hidden. Wiring it up needs its own rate-limit-aware discovery round.

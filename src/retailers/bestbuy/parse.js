@@ -1,5 +1,6 @@
 // Pure parsers for bestbuy.ca responses. Field names: docs/bestbuy-ca-endpoints.md
 import { WalmartApiError, apiChanged } from "../../lib/errors.js";
+import { shortDate } from "../../lib/dates.js";
 
 const ORIGIN = "https://www.bestbuy.ca";
 
@@ -51,4 +52,19 @@ export function parseAvailability(json) {
     statuses.set(String(l.locationKey), status);
   }
   return { aggregate: String(a.pickup.status ?? ""), statuses };
+}
+
+// The same availability response -> ship-to-home for the postal code the call was made with.
+// shipping.status "InStock" / "InStockOnlineOnly" -> available; "OutOfStock" / "SoldOut" -> out_of_stock.
+export function parseShipping(json) {
+  const s = json?.availabilities?.[0]?.shipping;
+  if (!s || typeof s !== "object") return null;
+  const status = String(s.status ?? "");
+  const qty = Number(s.quantityRemaining);
+  const by = shortDate(s.levelsOfServices?.[0]?.deliveryDate);
+  return {
+    status: /^InStock/i.test(status) ? "available" : /OutOfStock|SoldOut|NotAvailable/i.test(status) ? "out_of_stock" : "unknown",
+    quantity: Number.isFinite(qty) ? qty : null,
+    eta: by ? `by ${by}` : null,
+  };
 }

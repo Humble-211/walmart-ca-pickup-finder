@@ -1,6 +1,6 @@
 // bestbuy.ca REST endpoints. No cookies, headers or hashes are needed (docs/bestbuy-ca-endpoints.md),
 // but the calls still run from the bestbuy.ca content script so every retailer works the same way.
-import { parseProduct, parseStores, parseAvailability } from "./parse.js";
+import { parseProduct, parseStores, parseAvailability, parseShipping } from "./parse.js";
 import { WalmartApiError, apiChanged } from "../../lib/errors.js";
 
 const ORIGIN = "https://www.bestbuy.ca";
@@ -17,11 +17,14 @@ export function buildStoresUrl(postalCode) {
 
 // The `accept` media type is a query parameter here, not a header; without it the
 // response has no per-store locations.
-export function buildAvailabilityUrl(sku, locationIds) {
+// postalCode is optional: it only shapes the shipping part of the answer (delivery dates),
+// so the lookup sends it and the nationwide search does not.
+export function buildAvailabilityUrl(sku, locationIds, postalCode) {
   const q = new URLSearchParams({
     accept: "application/vnd.bestbuy.standardproduct.v1+json",
     "accept-language": "en-CA",
     locations: locationIds.join("|"),
+    ...(postalCode ? { postalCode } : {}),
     skus: String(sku),
   });
   return `${ORIGIN}/ecomm-api/availability/products?${q}`;
@@ -43,9 +46,11 @@ export async function getItem(sku) { return parseProduct(await get(buildProductU
 export async function getStores(postalCode) { return parseStores(await get(buildStoresUrl(postalCode))); }
 
 // One availability call; callers batch ids in chunks of LOCATIONS_PER_CALL.
-export async function getAvailability(sku, locationIds) {
+// -> { aggregate, statuses, delivery } (delivery: ship-to-home for postalCode, see parseShipping).
+export async function getAvailability(sku, locationIds, postalCode) {
   if (locationIds.length > LOCATIONS_PER_CALL) {
     throw new WalmartApiError("unknown", `getAvailability: at most ${LOCATIONS_PER_CALL} locations per call`);
   }
-  return parseAvailability(await get(buildAvailabilityUrl(sku, locationIds)));
+  const json = await get(buildAvailabilityUrl(sku, locationIds, postalCode));
+  return { ...parseAvailability(json), delivery: parseShipping(json) };
 }

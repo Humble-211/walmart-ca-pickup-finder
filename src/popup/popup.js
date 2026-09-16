@@ -5,6 +5,7 @@
 import { parseProductUrl, RETAILERS } from "../retailers/index.js";
 import { normalizePostalCode } from "../lib/postal-code.js";
 import { formatError } from "../lib/errors.js";
+import { deliveryText } from "../lib/delivery.js";
 import { JOB_KEY } from "../lib/job.js";
 
 const $ = (id) => document.getElementById(id);
@@ -37,6 +38,15 @@ function renderItem(item) {
   $("itemName").href = item.url;
   $("itemPrice").textContent = item.priceString;
   $("itemNotice").hidden = item.pickupEligible;
+  renderDelivery(item.delivery, job?.postalCode);
+}
+
+function renderDelivery(delivery, postalCode) {
+  const el = $("itemDelivery");
+  const text = deliveryText(delivery, postalCode);
+  el.textContent = text;
+  el.hidden = !text;
+  el.className = `delivery ${delivery?.status ?? ""}`.trim();
 }
 
 function storeRow(s) {

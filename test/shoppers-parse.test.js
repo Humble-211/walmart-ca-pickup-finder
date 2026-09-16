@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
-import { parseProduct, parseStoreDetails } from "../src/retailers/shoppers/parse.js";
+import { parseProduct, parseStoreDetails, parseDelivery } from "../src/retailers/shoppers/parse.js";
 
 const fx = (n) => JSON.parse(readFileSync(new URL(`./fixtures/${n}`, import.meta.url), "utf8"));
 
@@ -48,5 +48,18 @@ describe("parseStoreDetails", () => {
   });
   it("throws api_changed when storeInventory is missing", () => {
     expect(() => parseStoreDetails({ errors: [{ message: "x" }] })).toThrow(expect.objectContaining({ code: "api_changed" }));
+  });
+});
+
+describe("parseDelivery", () => {
+  it("maps the shipping block to a delivery summary", () => {
+    expect(parseDelivery(fx("shoppers-delivery.json"))).toEqual({ status: "available", quantity: 56, eta: "Estimated delivery in 1-3 business days" });
+  });
+  it("treats POSTAL_CODE_NOT_SET as unknown and OUT_OF_STOCK as out of stock", () => {
+    expect(parseDelivery({ fulfillment: { shipping: { status: "POSTAL_CODE_NOT_SET" } } })).toEqual({ status: "unknown", quantity: null, eta: null });
+    expect(parseDelivery({ fulfillment: { shipping: { status: "OUT_OF_STOCK", quantity: 0 } } }).status).toBe("out_of_stock");
+  });
+  it("throws api_changed without a shipping block", () => {
+    expect(() => parseDelivery({ fulfillment: {} })).toThrow(expect.objectContaining({ code: "api_changed" }));
   });
 });

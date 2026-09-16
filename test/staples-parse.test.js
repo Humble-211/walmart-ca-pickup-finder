@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
-import { parseProduct, parseAvailability } from "../src/retailers/staples/parse.js";
+import { parseProduct, parseAvailability, parseDelivery } from "../src/retailers/staples/parse.js";
 
 const load = (n) => JSON.parse(readFileSync(new URL(`./fixtures/${n}`, import.meta.url), "utf8"));
 const product = load("staples-product.json");
@@ -75,5 +75,18 @@ describe("staples parseAvailability", () => {
     } } }, SKU);
     expect(stores.map((s) => s.id)).toEqual(["3", "1", "2"]);
     expect(stores.find((s) => s.id === "2").distanceKm).toBeNull();
+  });
+});
+
+describe("parseDelivery", () => {
+  it("maps the ship-to-home row to a delivery summary with the arrival window", () => {
+    const json = JSON.parse(readFileSync(new URL("./fixtures/staples-delivery.json", import.meta.url), "utf8"));
+    expect(parseDelivery(json, "3082604")).toEqual({ status: "available", quantity: 30, eta: "arrives Sep 22" });
+  });
+  it("reports out_of_stock for an unknown sku row (sku \"\", quantity 0, no dates)", () => {
+    expect(parseDelivery({ success: true, availability: [{ sku: "", quantity: 1, available_quantity: 0, min_delivery_date: null, max_delivery_date: null }] }, "000000")).toEqual({ status: "out_of_stock", quantity: 0, eta: null });
+  });
+  it("throws api_changed when availability is not a list", () => {
+    expect(() => parseDelivery({ availability: {} }, "1")).toThrow(expect.objectContaining({ code: "api_changed" }));
   });
 });

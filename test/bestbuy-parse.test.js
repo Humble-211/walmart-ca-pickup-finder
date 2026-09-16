@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
-import { parseProduct, parseStores, parseAvailability } from "../src/retailers/bestbuy/parse.js";
+import { parseProduct, parseStores, parseAvailability, parseShipping } from "../src/retailers/bestbuy/parse.js";
 
 const load = (n) => JSON.parse(readFileSync(new URL(`./fixtures/${n}`, import.meta.url), "utf8"));
 
@@ -71,5 +71,17 @@ describe("bestbuy parsers", () => {
   });
   it("parseAvailability throws api_changed when availabilities is missing", () => {
     expect(() => parseAvailability({})).toThrow(expect.objectContaining({ code: "api_changed" }));
+  });
+});
+
+describe("parseShipping", () => {
+  it("maps the shipping block to a delivery summary", () => {
+    const json = JSON.parse(readFileSync(new URL("./fixtures/bestbuy-availability.json", import.meta.url), "utf8"));
+    expect(parseShipping(json)).toEqual({ status: "available", quantity: 1394, eta: "by Sep 16" });
+  });
+  it("maps out-of-stock and unknown statuses, tolerating missing fields", () => {
+    expect(parseShipping({ availabilities: [{ shipping: { status: "OutOfStock" } }] })).toEqual({ status: "out_of_stock", quantity: null, eta: null });
+    expect(parseShipping({ availabilities: [{ shipping: { status: "Preorder" } }] }).status).toBe("unknown");
+    expect(parseShipping({ availabilities: [{}] })).toBeNull();
   });
 });

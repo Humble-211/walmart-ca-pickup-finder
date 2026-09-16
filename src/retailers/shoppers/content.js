@@ -33,8 +33,8 @@ async function handle(msg) {
       const user = locate(msg.postalCode);
       const item = await api.getItem(msg.itemId);
       resolved.set(msg.itemId, item.id);
-      const stores = await api.getStoreStock(item.id, user, false);
-      return { ok: true, item, stores: stores.map((s) => ({ ...s, url: item.url })) };
+      const [stores, delivery] = await Promise.all([api.getStoreStock(item.id, user, false), api.getDelivery(item.id, msg.postalCode)]);
+      return { ok: true, item: { ...item, delivery }, stores: stores.map((s) => ({ ...s, url: item.url })) };
     }
     case "findInStock": {
       if (!Array.isArray(msg.nearby)) return { ok: false, code: "unknown", error: "findInStock needs the nearby store list." };

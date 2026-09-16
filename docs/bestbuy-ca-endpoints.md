@@ -86,6 +86,15 @@ availabilities[]:
   shipping.quantityRemaining, shipping.levelsOfServices[] (carrier/price/deliveryDate)
 ```
 
+**The same response also answers delivery** for the `postalCode` query parameter,
+which is otherwise optional: `shipping.status` ("InStock", "InStockOnlineOnly",
+"OutOfStock", …), `shipping.quantityRemaining` and
+`shipping.levelsOfServices[0].deliveryDate` (plus `carrierName` and `price`). The
+lookup sends the postal code and reads them (`parseShipping`); the nationwide pickup
+search leaves the parameter off, since it only shapes this shipping block. An empty
+`locations=` is accepted (200, `pickup.locations: []`, shipping still filled in), so a
+postal code with no Best Buy nearby still gets a delivery answer.
+
 **Per-store status is boolean, not an enum.** There is no per-store status string.
 Map it as:
 
