@@ -195,6 +195,25 @@ describe("makeWatcher", () => {
     await watcher.tick();
     expect(chrome.tabs.sendMessage).toHaveBeenCalledWith(1, expect.objectContaining({ type: "lookup", mode: "delivery" }));
   });
+
+  it("sends a restock alert through the injected notifier with the stored telegram config", async () => {
+    const item = { name: "Thing", url: "https://www.walmart.ca/x", priceString: "$1.00", delivery: { status: "available", quantity: null, eta: null } };
+    const { chrome } = fakeChrome({ tabs: [{ id: 1, url: "https://www.walmart.ca/en" }], answers: { 1: { ok: true, item } } });
+    chrome.storage = {
+      local: (() => { let d = {}; return { get: async (k) => Object.fromEntries((Array.isArray(k) ? k : [k]).filter((x) => x in d).map((x) => [x, d[x]])), set: async (p) => { d = { ...d, ...p }; } }; })(),
+    };
+    const jobs = { get: async () => null };
+    const sendSpy = vi.fn(async () => ({ ok: true }));
+    const watcher = makeWatcher(chrome, jobs, 0, sendSpy);
+    await watcher.setSettings({ enabled: true, telegram: { token: "t", chatId: "c" } });
+    await watcher.add({ retailer: "walmart", itemId: "1", input: "u", postalCode: "T3A 5S8" });
+    await watcher.tick();
+    expect(sendSpy).toHaveBeenCalledTimes(1);
+    const [sent] = sendSpy.mock.calls[0];
+    expect(sent.token).toBe("t");
+    expect(sent.chatId).toBe("c");
+    expect(sent.text).toContain("Thing");
+  });
 });
 
 describe("watch alarm", () => {

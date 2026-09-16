@@ -55,11 +55,16 @@ async function forward(chrome, adapter, msg, sleepMs, attempts = 1) {
   }
 }
 
+// Routes a message to the content script of the retailer it names. Shared by makeJobs
+// and makeWatcher so retailer routing has one definition instead of two that can drift.
+const forwardToRetailer = (chrome, sleepMs) => (msg) =>
+  forward(chrome, RETAILERS[msg.retailer], msg, sleepMs, FORWARD_ATTEMPTS);
+
 // One job runner per worker. chrome.storage.session lives as long as the browser session and
 // is only readable by extension pages, which is exactly the popup's need.
 export function makeJobs(chrome, sleepMs) {
   return createJobs({
-    forward: (msg) => forward(chrome, RETAILERS[msg.retailer], msg, sleepMs, FORWARD_ATTEMPTS),
+    forward: forwardToRetailer(chrome, sleepMs),
     storage: chrome.storage?.session ?? chrome.storage.local,
   });
 }
@@ -70,7 +75,7 @@ export const WATCH_ALARM = "watchTick";
 export function makeWatcher(chrome, jobs, sleepMs, send = sendMessage) {
   const storage = chrome.storage?.local;
   return createWatcher({
-    forward: (msg) => forward(chrome, RETAILERS[msg.retailer], msg, sleepMs, FORWARD_ATTEMPTS),
+    forward: forwardToRetailer(chrome, sleepMs),
     storage,
     getJob: () => jobs.get(),
     notify: async (text) => {
