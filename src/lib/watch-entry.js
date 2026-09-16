@@ -5,7 +5,9 @@
 // `notifiedStatus` is what the user has been told. A restock message only moves
 // `notifiedStatus` once Telegram has accepted it (see confirmAlert), so a failed
 // send is retried on the next tick instead of being swallowed.
+import { RETAILERS } from "../retailers/index.js";
 import { deliveryText } from "./delivery.js";
+import { formatError } from "./errors.js";
 
 export const DEFAULT_INTERVAL_MINUTES = 5;
 export const MAX_BACKOFF_MINUTES = 60;
@@ -57,7 +59,13 @@ export function applyResult(watch, result, { now, random }) {
       watch: {
         ...watch,
         failures,
-        lastError: { code: result?.code ?? "unknown", message: result?.error ?? "The check failed." },
+        // Substituted here, once, so every display site (the options page, the
+        // Telegram alert) gets readable text: the raw messages from errors.js
+        // carry {host}/{label} placeholders that only the retailer can fill in.
+        lastError: {
+          code: result?.code ?? "unknown",
+          message: formatError(result?.error ?? "The check failed.", RETAILERS[watch.retailer]),
+        },
         lastCheckedAt: now,
         nextCheckAt: nextCheckAt({ now, intervalMinutes: watch.intervalMinutes, failures, random }),
       },
@@ -68,6 +76,10 @@ export function applyResult(watch, result, { now, random }) {
   const item = result.item ?? {};
   const status = item.delivery?.status ?? "unknown";
   const restock = status === "available" && watch.notifiedStatus !== "available";
+  // A success after a reported error streak owes the user a "working again" note.
+  // The latch stays set until confirmAlert sees that note accepted, so a Telegram
+  // outage at this moment costs a retry rather than the message.
+  const recovered = watch.alertedError && !restock;
   const next = {
     ...watch,
     name: item.name ?? watch.name,
@@ -82,9 +94,8 @@ export function applyResult(watch, result, { now, random }) {
     nextCheckAt: nextCheckAt({ now, intervalMinutes: watch.intervalMinutes, failures: 0, random }),
     failures: 0,
     lastError: null,
-    alertedError: false,
+    alertedError: recovered,
   };
-  const recovered = watch.alertedError && !restock;
   return { watch: next, alert: restock ? "restock" : recovered ? "recovery" : null };
 }
 
@@ -93,5 +104,6 @@ export function applyResult(watch, result, { now, random }) {
 export function confirmAlert(watch, alert) {
   if (alert === "restock") return { ...watch, notifiedStatus: "available", notifiedAt: watch.lastCheckedAt };
   if (alert === "error") return { ...watch, alertedError: true };
+  if (alert === "recovery") return { ...watch, alertedError: false };
   return watch;
 }

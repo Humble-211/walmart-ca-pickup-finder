@@ -3,6 +3,7 @@ import {
   DEFAULT_INTERVAL_MINUTES, MAX_BACKOFF_MINUTES, MAX_CHECKS_PER_TICK, ERROR_ALERT_AFTER,
   watchId, createWatch, backoffMinutes, nextCheckAt, dueWatches, applyResult, confirmAlert,
 } from "../src/lib/watch-entry.js";
+import { ERROR_MESSAGES } from "../src/lib/errors.js";
 
 const NOW = 1_700_000_000_000;
 const MIN = 60_000;
@@ -96,7 +97,7 @@ describe("applyResult on a successful check", () => {
   it("keeps the retailer's own delivery wording for the message and the options page", () => {
     const res = okResult("available", { delivery: { status: "available", quantity: null, eta: "arrives Sep 21", seller: "DealWiz" } });
     expect(applyResult(base(), res, { now: NOW, random: () => 0.5 }).watch.deliveryText)
-      .toBe("Delivery to M5V 3L9: In stock · arrives Sep 21 · Ships from DealWiz");
+      .toBe("Ships from DealWiz: In stock · arrives Sep 21");
   });
 
   it("treats a missing delivery block as unknown rather than crashing", () => {
@@ -118,6 +119,20 @@ describe("applyResult on a failed check", () => {
     expect(watch.status).toBe(null); // a failed check tells us nothing about stock
   });
 
+  // The wire carries the raw template: every code the monitor sees (no_tab, verification,
+  // rate_limited) contains {host}, and nothing downstream substitutes it, so the Telegram
+  // message used to read "{host} asked for verification".
+  it("renders the retailer into the stored message, leaving no placeholder behind", () => {
+    for (const code of ["no_tab", "verification", "rate_limited"]) {
+      const { watch } = applyResult(base(), { ok: false, code, error: ERROR_MESSAGES[code] }, { now: NOW, random: () => 0.5 });
+      expect(watch.lastError.message).not.toContain("{");
+      expect(watch.lastError.message).toContain("www.walmart.ca");
+    }
+    const bestbuy = { ...base(), retailer: "bestbuy" };
+    const { watch } = applyResult(bestbuy, { ok: false, code: "verification", error: ERROR_MESSAGES.verification }, { now: NOW, random: () => 0.5 });
+    expect(watch.lastError.message).toBe("www.bestbuy.ca asked for verification. Complete it in the www.bestbuy.ca tab, then retry.");
+  });
+
   it("alerts exactly once, on the third consecutive failure", () => {
     expect(applyResult(base({ failures: 1 }), err, { now: NOW, random: () => 0.5 }).alert).toBeNull();
     expect(applyResult(base({ failures: ERROR_ALERT_AFTER - 1 }), err, { now: NOW, random: () => 0.5 }).alert).toBe("error");
@@ -128,8 +143,18 @@ describe("applyResult on a failed check", () => {
     const recovered = applyResult(base({ failures: 5, alertedError: true }), okResult("out_of_stock"), { now: NOW, random: () => 0.5 });
     expect(recovered.alert).toBe("recovery");
     expect(recovered.watch.failures).toBe(0);
-    expect(recovered.watch.alertedError).toBe(false);
+    // The latch stays up until confirmAlert sees the note accepted: clearing it here
+    // would drop the message for good if Telegram happened to be unreachable.
+    expect(recovered.watch.alertedError).toBe(true);
     expect(applyResult(base(), okResult("out_of_stock"), { now: NOW, random: () => 0.5 }).alert).toBeNull();
+  });
+
+  it("keeps asking for the recovery note until one send is accepted", () => {
+    const failed = applyResult(base({ failures: 5, alertedError: true }), okResult("out_of_stock"), { now: NOW, random: () => 0.5 });
+    // Telegram refused, so nothing was confirmed: the next successful check asks again.
+    const again = applyResult(failed.watch, okResult("out_of_stock"), { now: NOW, random: () => 0.5 });
+    expect(again.alert).toBe("recovery");
+    expect(applyResult(confirmAlert(again.watch, "recovery"), okResult("out_of_stock"), { now: NOW, random: () => 0.5 }).alert).toBeNull();
   });
 
   it("prefers the restock news over the recovery note when both apply", () => {
@@ -147,9 +172,12 @@ describe("confirmAlert", () => {
   it("marks the error streak as reported", () => {
     expect(confirmAlert(base({ failures: 3 }), "error").alertedError).toBe(true);
   });
-  it("leaves the entry alone for a recovery note or no alert", () => {
+  it("lowers the error latch once the recovery note was accepted", () => {
+    const w = base({ status: "out_of_stock", notifiedStatus: "out_of_stock", alertedError: true });
+    expect(confirmAlert(w, "recovery")).toEqual({ ...w, alertedError: false });
+  });
+  it("leaves the entry alone when there was no alert", () => {
     const w = base({ status: "out_of_stock", notifiedStatus: "out_of_stock" });
-    expect(confirmAlert(w, "recovery")).toEqual(w);
     expect(confirmAlert(w, null)).toEqual(w);
   });
 });

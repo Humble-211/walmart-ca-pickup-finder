@@ -1,6 +1,8 @@
 // The restock monitor's settings and watchlist. Every change goes through the
 // background worker, which owns the storage, so two open copies of this page
 // cannot write over each other.
+import { rateNote } from "../lib/watch.js";
+
 const $ = (id) => document.getElementById(id);
 const STATUS_LABEL = { available: "In stock", out_of_stock: "Out of stock", unknown: "Unknown" };
 
@@ -27,13 +29,6 @@ function when(ts) {
   if (mins <= 0) return "just now";
   if (mins < 60) return `${mins} min ago`;
   return `${Math.round(mins / 60)} h ago`;
-}
-
-function rateNote(watches, intervalMinutes) {
-  const active = watches.filter((w) => !w.paused).length;
-  if (!active) return "Nothing is being checked.";
-  const per5 = ((active * 5) / intervalMinutes).toFixed(1);
-  return `About ${per5} checks every 5 minutes. Walmart starts refusing at roughly 25, so keep some room for your own searches.`;
 }
 
 function watchRow(w) {
@@ -63,7 +58,7 @@ function render({ watches, settings }) {
   $("chatId").value = settings.telegram?.chatId ?? "";
   $("enabled").checked = Boolean(settings.enabled);
   $("interval").value = settings.intervalMinutes;
-  $("rate").textContent = rateNote(watches, settings.intervalMinutes);
+  $("rate").textContent = rateNote(watches);
   $("empty").hidden = watches.length > 0;
   $("watches").replaceChildren(...watches.map(watchRow));
 }

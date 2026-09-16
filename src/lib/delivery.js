@@ -10,13 +10,19 @@
 const STATUS_LABEL = { available: "In stock", out_of_stock: "Out of stock", unknown: "Unknown" };
 
 // "Delivery to M5V 3L9: In stock · 56 available · Estimated delivery in 1-3 business days"
+//
+// A marketplace offer is the exception: its answer comes from the product's own
+// shippingOption, which describes the address in the browsing session, not the postal
+// code the user typed (walmart's getItem takes no postal code at all). Naming a
+// destination there would claim a check nobody made, so the seller leads instead:
+// "Ships from DealWiz: In stock · arrives Sep 21".
 export function deliveryText(delivery, postalCode) {
   if (!delivery) return "";
   const parts = [STATUS_LABEL[delivery.status] ?? STATUS_LABEL.unknown];
   if (delivery.status === "available" && Number.isFinite(delivery.quantity)) parts.push(`${delivery.quantity} available`);
   if (delivery.eta) parts.push(delivery.eta);
-  if (delivery.seller) parts.push(`Ships from ${delivery.seller}`);
-  return `Delivery to ${postalCode || "you"}: ${parts.join(" · ")}`;
+  const where = delivery.seller ? `Ships from ${delivery.seller}` : `Delivery to ${postalCode || "you"}`;
+  return `${where}: ${parts.join(" · ")}`;
 }
 
 // The status line for delivery mode when the retailer returns no per-store list: it has to

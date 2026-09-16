@@ -1,6 +1,7 @@
 import { describe, it, expect, vi } from "vitest";
-import { createWatcher, alertText, WATCHES_KEY, SETTINGS_KEY, DEFAULT_SETTINGS } from "../src/lib/watch.js";
+import { createWatcher, alertText, rateNote, WATCHES_KEY, SETTINGS_KEY, DEFAULT_SETTINGS } from "../src/lib/watch.js";
 import { createWatch } from "../src/lib/watch-entry.js";
+import { ERROR_MESSAGES } from "../src/lib/errors.js";
 
 const NOW = 1_700_000_000_000;
 const MIN = 60_000;
@@ -136,6 +137,50 @@ describe("tick notifying", () => {
     expect(notify.mock.calls[0][0]).toMatch(/verification/i);
   });
 
+  // The content script sends the template, not the finished sentence: every code the
+  // monitor can see carries {host}. Feeding the real constant through is what catches an
+  // alert that reads "{host} asked for verification."
+  it("sends and stores a message with no {placeholder} left in it", async () => {
+    for (const code of ["no_tab", "verification", "rate_limited"]) {
+      const { watcher, notify, storage } = setup({
+        watches: [due({ failures: 2 })],
+        answer: { ok: false, code, error: ERROR_MESSAGES[code] },
+      });
+      await watcher.tick();
+      expect(notify).toHaveBeenCalledTimes(1);
+      expect(notify.mock.calls[0][0]).not.toContain("{");
+      expect(notify.mock.calls[0][0]).toContain("www.walmart.ca");
+      expect(storage.read()[WATCHES_KEY][0].lastError.message).not.toContain("{");
+    }
+  });
+
+  // applyResult leaves alertedError up until a send is confirmed, so an outage at the
+  // moment checks start working again costs a retry rather than the message.
+  it("resends the recovery note on the next tick when telegram was unreachable", async () => {
+    const storage = fakeStorage({ [WATCHES_KEY]: [due({ failures: 4, alertedError: true })], [SETTINGS_KEY]: configured });
+    let accept = false;
+    const notify = vi.fn(async () => (accept ? { ok: true } : { ok: false, error: "network" }));
+    const watcher = createWatcher({
+      forward: async () => ({ ok: true, item: item("out_of_stock") }), storage,
+      getJob: async () => null, notify, now: () => NOW, random: () => 0.5,
+    });
+    await watcher.tick();
+    expect(notify).toHaveBeenCalledTimes(1);
+    expect(storage.read()[WATCHES_KEY][0].alertedError).toBe(true); // the latch survived the failed send
+
+    accept = true;
+    storage.read()[WATCHES_KEY][0].nextCheckAt = NOW - 1;
+    await watcher.tick();
+    expect(notify).toHaveBeenCalledTimes(2);
+    expect(notify.mock.calls[1][0]).toContain("Checks working again");
+    expect(storage.read()[WATCHES_KEY][0].alertedError).toBe(false);
+
+    // ...and once it lands, the note is not repeated on every later success.
+    storage.read()[WATCHES_KEY][0].nextCheckAt = NOW - 1;
+    await watcher.tick();
+    expect(notify).toHaveBeenCalledTimes(2);
+  });
+
   it("does not let a throwing notifier lose the check result", async () => {
     const storage = fakeStorage({ [WATCHES_KEY]: [due()], [SETTINGS_KEY]: configured });
     const watcher = createWatcher({
@@ -177,6 +222,22 @@ describe("watchlist management", () => {
     expect(storage.read()[WATCHES_KEY][0].paused).toBe(true);
     await watcher.remove("walmart:1");
     expect(storage.read()[WATCHES_KEY]).toEqual([]);
+  });
+
+  // "Minutes between checks for each item" has to mean the items already on the list.
+  it("applies a new interval to the entries already being watched", async () => {
+    const { watcher, storage } = setup({ watches: [due({ id: "walmart:1" }), due({ id: "walmart:2", itemId: "2" })] });
+    await watcher.setSettings({ intervalMinutes: 12 });
+    expect(storage.read()[WATCHES_KEY].map((w) => w.intervalMinutes)).toEqual([12, 12]);
+    // The next check after the change uses it.
+    await watcher.tick();
+    expect(storage.read()[WATCHES_KEY][0].nextCheckAt).toBe(NOW + 12 * MIN);
+  });
+
+  it("leaves the watchlist alone when the interval did not change", async () => {
+    const { watcher, storage } = setup({ watches: [due({ id: "walmart:1" })] });
+    await watcher.setSettings({ enabled: false });
+    expect(storage.read()[WATCHES_KEY][0].intervalMinutes).toBe(5);
   });
 
   it("merges settings instead of replacing them", async () => {
@@ -251,6 +312,54 @@ describe("tick concurrency", () => {
     expect(stored).toEqual([]);
   });
 
+  // A check can run for the better part of a minute (tab open, three forward attempts).
+  // Everything the user changes in that window lives in the stored list, and the tick's
+  // snapshot is stale, so folding the snapshot back wholesale silently undid the edit.
+  it("keeps a pause made while a tick was in flight", async () => {
+    let release;
+    const gate = new Promise((r) => { release = r; });
+    const storage = fakeStorage({ [WATCHES_KEY]: [due({ id: "walmart:1" })], [SETTINGS_KEY]: configured });
+    const forward = vi.fn(async () => { await gate; return { ok: true, item: item("out_of_stock") }; });
+    const watcher = createWatcher({ forward, storage, getJob: async () => null, notify: async () => ({ ok: true }), now: () => NOW, random: () => 0.5 });
+    const first = watcher.tick();
+    await watcher.setPaused("walmart:1", true);
+    release();
+    expect(await first).toEqual({ checked: 1, skipped: null });
+    const [stored] = storage.read()[WATCHES_KEY];
+    expect(stored.paused).toBe(true);
+    expect(stored.status).toBe("out_of_stock"); // the check's own findings are still kept
+  });
+
+  it("keeps a postal code changed while a tick was in flight, and re-checks against it", async () => {
+    let release;
+    const gate = new Promise((r) => { release = r; });
+    const storage = fakeStorage({ [WATCHES_KEY]: [due({ id: "walmart:1" })], [SETTINGS_KEY]: configured });
+    const forward = vi.fn(async () => { await gate; return { ok: true, item: item("out_of_stock") }; });
+    const watcher = createWatcher({ forward, storage, getJob: async () => null, notify: async () => ({ ok: true }), now: () => NOW, random: () => 0.5 });
+    const first = watcher.tick();
+    await watcher.add({ retailer: "walmart", itemId: "1", input: "u2", postalCode: "M5V 3L9" });
+    release();
+    expect(await first).toEqual({ checked: 1, skipped: null });
+    const [stored] = storage.read()[WATCHES_KEY];
+    expect(stored).toMatchObject({ postalCode: "M5V 3L9", input: "u2", paused: false });
+    // The answer that just came back is about the old address, so the entry stays due now
+    // instead of being pushed five minutes out carrying an answer for the wrong destination.
+    expect(stored.nextCheckAt).toBe(NOW);
+  });
+
+  it("keeps an interval change made while a tick was in flight", async () => {
+    let release;
+    const gate = new Promise((r) => { release = r; });
+    const storage = fakeStorage({ [WATCHES_KEY]: [due({ id: "walmart:1" })], [SETTINGS_KEY]: configured });
+    const forward = vi.fn(async () => { await gate; return { ok: true, item: item("out_of_stock") }; });
+    const watcher = createWatcher({ forward, storage, getJob: async () => null, notify: async () => ({ ok: true }), now: () => NOW, random: () => 0.5 });
+    const first = watcher.tick();
+    await watcher.setSettings({ intervalMinutes: 15 });
+    release();
+    await first;
+    expect(storage.read()[WATCHES_KEY][0].intervalMinutes).toBe(15);
+  });
+
   it("releases the guard after a tick throws, so the monitor is not wedged", async () => {
     const storage = fakeStorage({ [WATCHES_KEY]: [due()], [SETTINGS_KEY]: configured });
     // Make storage.get reject once, then work normally
@@ -266,5 +375,42 @@ describe("tick concurrency", () => {
     await expect(watcher.tick()).rejects.toThrow("storage error");
     // Second tick should work normally (guard is released)
     expect((await watcher.tick()).checked).toBe(1);
+  });
+});
+
+// The options page leans on this number as the safeguard against a long watchlist
+// crossing walmart's rate limit, so it has to describe what the monitor really does.
+describe("rateNote", () => {
+  const w = (over = {}) => ({ retailer: "walmart", paused: false, intervalMinutes: 5, failures: 0, ...over });
+
+  it("says so when nothing is being checked", () => {
+    expect(rateNote([])).toBe("Nothing is being checked.");
+    expect(rateNote([w({ paused: true })])).toBe("Nothing is being checked.");
+    expect(rateNote(undefined)).toBe("Nothing is being checked.");
+  });
+
+  it("sums each entry's own interval rather than one global default", () => {
+    // One entry every 5 minutes and one every minute: 1 + 5 = 6 checks per 5 minutes.
+    expect(rateNote([w(), w({ intervalMinutes: 1 })])).toContain("About 6.0 Walmart checks every 5 minutes");
+    expect(rateNote([w()])).toContain("About 1.0 Walmart checks every 5 minutes");
+  });
+
+  it("counts only walmart entries, because it is walmart's limit being described", () => {
+    expect(rateNote([w(), w({ retailer: "bestbuy", intervalMinutes: 1 }), w({ retailer: "staples", intervalMinutes: 1 })]))
+      .toContain("About 1.0 Walmart checks");
+    expect(rateNote([w({ retailer: "bestbuy" }), w({ retailer: "shoppers" })]))
+      .toBe("2 items being checked, none of them on Walmart.");
+    expect(rateNote([w({ retailer: "bestbuy" })])).toBe("1 item being checked, none of them on Walmart.");
+  });
+
+  it("counts an entry in backoff at the interval it is actually using", () => {
+    // 5 minutes doubled twice is 20, so a quarter of the healthy rate.
+    expect(rateNote([w({ failures: 2 })])).toContain("About 0.3 Walmart checks");
+  });
+
+  it("names walmart's limit and survives a missing or zero interval", () => {
+    expect(rateNote([w()])).toContain("Walmart starts refusing at roughly 25");
+    expect(rateNote([w({ intervalMinutes: 0 })])).toContain("About 1.0 Walmart checks");
+    expect(rateNote([w({ intervalMinutes: undefined })])).toContain("About 1.0 Walmart checks");
   });
 });

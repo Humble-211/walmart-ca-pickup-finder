@@ -13,11 +13,16 @@ describe("deliveryText", () => {
     expect(deliveryText({ status: "unknown", quantity: null, eta: null }, "M5V 3L9")).toBe("Delivery to M5V 3L9: Unknown");
     expect(deliveryText({ status: "available", quantity: null, eta: null }, "M5V 3L9")).toBe("Delivery to M5V 3L9: In stock");
   });
-  it("names the seller when the item ships from a marketplace seller rather than the retailer", () => {
+  // A marketplace answer comes from the product's shippingOption, which is about the
+  // session's address, not the postal code the user typed (getItem takes none). Naming
+  // a destination would claim a check that was never made.
+  it("names the seller instead of a destination when the item ships from a marketplace seller", () => {
     expect(deliveryText({ status: "available", quantity: null, eta: "arrives Sep 21", seller: "Growcanada" }, "L4K 0P8"))
-      .toBe("Delivery to L4K 0P8: In stock · arrives Sep 21 · Ships from Growcanada");
+      .toBe("Ships from Growcanada: In stock · arrives Sep 21");
     expect(deliveryText({ status: "out_of_stock", quantity: null, eta: null, seller: "Growcanada" }, "L4K 0P8"))
-      .toBe("Delivery to L4K 0P8: Out of stock · Ships from Growcanada");
+      .toBe("Ships from Growcanada: Out of stock");
+    expect(deliveryText({ status: "available", quantity: null, eta: null, seller: "DealWiz" }, "T3A 5S8"))
+      .not.toContain("T3A 5S8");
   });
 
   it("returns nothing for an adapter that does not report delivery", () => {
