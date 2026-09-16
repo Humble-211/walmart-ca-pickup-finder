@@ -18,7 +18,7 @@ const CHROME = process.env.CHROME || join(process.env.LOCALAPPDATA ?? "", "Googl
 const PORT = 9222;
 const PROFILE = join(process.env.TEMP ?? "/tmp", `pickup-finder-e2e-${Date.now()}`);
 const scenarios = process.argv.slice(2).map((s) => { const [url, postal, mode = "pickup"] = s.split("|"); return { url, postal, mode }; });
-if (!scenarios.length) { console.error('usage: node tools/e2e-popup.mjs "<product url>|<postal code>|<mode>" ...'); process.exit(2); }
+if (!scenarios.length && !process.env.WATCH) { console.error('usage: node tools/e2e-popup.mjs "<product url>|<postal code>|<mode>" ...'); process.exit(2); }
 
 const chrome = spawn(CHROME, [`--remote-debugging-port=${PORT}`, "--enable-unsafe-extension-debugging", `--user-data-dir=${PROFILE}`, "--no-first-run", "--no-default-browser-check", "about:blank"], { stdio: "ignore" });
 let id = 0; const waiters = new Map(); let ws;
@@ -78,6 +78,31 @@ try {
       const s = JSON.parse(snap);
       if (!s.busy && !s.status && quiet >= 2) break;
     }
+  }
+
+  // Restock monitor: configure a stub bot, add a watch, force it due, run one tick,
+  // and read back what the monitor recorded. No real Telegram message is sent: the
+  // options page is given a token that api.telegram.org will reject, and the check
+  // asserts on the stored status rather than on delivery.
+  if (process.env.WATCH) {
+    const [url, postal] = process.env.WATCH.split("|");
+    console.log(`\n=== watch ${url} @ ${postal}`);
+    await openPopup();
+    await evalIn(`document.getElementById("item").value = ${JSON.stringify(url)};
+      document.getElementById("postal").value = ${JSON.stringify(postal)};
+      document.getElementById("watch").click();`);
+    await sleep(1500);
+    const state = await evalIn(`(async () => {
+      await chrome.runtime.sendMessage({ type: "setWatchSettings", settings: { enabled: true, telegram: { token: "0:stub", chatId: "0" }, intervalMinutes: 5 } });
+      const before = await chrome.runtime.sendMessage({ type: "getWatchState" });
+      const id = before.watches[0].id;
+      // chrome.alarms clamps periodInMinutes: 1 to a full minute, so this has to
+      // outlast it. Anything shorter reads the watch before a single tick has run.
+      await new Promise((r) => setTimeout(r, 70000));
+      const after = await chrome.runtime.sendMessage({ type: "getWatchState" });
+      return JSON.stringify({ id, watch: after.watches.find((w) => w.id === id) });
+    })()`);
+    console.log(state);
   }
   finish(0);
 } catch (err) {

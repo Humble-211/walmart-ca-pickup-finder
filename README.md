@@ -67,6 +67,29 @@ out of stock even when the seller ships it across the country. For those offers 
 extension reads the product's own shipping answer instead of the nodes, shows the delivery
 date Walmart quotes, names the seller, and lists no store rows, because none of them apply.
 
+## Restock monitor
+
+The extension can watch a list of products and send a Telegram message when one
+becomes deliverable to your postal code. Paste a product URL and a postal code in
+the popup, press **Watch for restock**, then open the extension's options page to
+enter a bot token and a chat id and switch the monitor on.
+
+Create the bot with [BotFather](https://t.me/BotFather) and send it one message
+first, otherwise it is not allowed to write to you. The **Send test message**
+button on the options page reports Telegram's own error if anything is wrong.
+
+Checks run on a one-minute alarm, and each item is re-checked every five minutes
+by default. A check makes the same delivery lookup the popup makes, so it costs
+one request per item. The monitor stands aside while a search you started by hand
+is running, and backs off when a retailer rate-limits it. Three consecutive
+failures send one message naming the problem, and a message goes out again when
+checks start working; silence therefore means the monitor is running and nothing
+has changed.
+
+Chrome must be running for the monitor to work, though the window can be
+minimised. Chrome may stretch alarms when the machine is idle or on battery, so
+treat the cadence as best-effort rather than exact.
+
 ## Adding a retailer
 
 Create `src/retailers/<name>/{urls.js,content.js}` — `walmart/urls.js` is the
