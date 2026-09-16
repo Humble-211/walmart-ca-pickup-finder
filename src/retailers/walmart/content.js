@@ -1,5 +1,6 @@
 // Runs on https://www.walmart.ca/*. Answers messages from the background worker.
-import { getItem, findStores, findStoresAround, selectStore } from "./api.js";
+import { getItem, findStores, findDeliveryStores, findStoresAround, selectStore } from "./api.js";
+import { deliverySummary } from "./parse.js";
 import { rankStores } from "../../lib/rank-stores.js";
 import { locateUser } from "../../lib/geo.js";
 import { findNearestInStock } from "../../lib/stock-search.js";
@@ -11,6 +12,10 @@ const MAX_STORES = 10;
 // nationwide search is capped well below that. The popup can ask to continue.
 const SEARCH_MAX_CALLS = 10;
 const SEARCH_GAP_MS = 1000;
+// Delivery is served by the nodes around the postal code; there is nothing farther to probe,
+// so "keep searching" just widens the one call (walmart caps maxCount at 50).
+const DELIVERY_STORES = 10;
+const DELIVERY_STORES_WIDE = 50;
 
 const coordsById = new Map(catalog.stores.map((s) => [s.id, s]));
 
@@ -39,23 +44,40 @@ async function findInStock({ itemId, nearby, checkedIds = [] }) {
   return result;
 }
 
-async function handle(msg) {
+// deps are injected so tests can drive this without the network or chrome.
+export async function handleMessage(msg, deps = {}) {
+  const api = { getItem, findStores, findDeliveryStores, findInStock, selectStore, rankStores, ...deps };
   switch (msg?.type) {
     case "ping":
       return { ok: true };
     case "lookup": {
+      if (msg.mode === "delivery") {
+        const [item, stores] = await Promise.all([
+          api.getItem(msg.itemId),
+          api.findDeliveryStores(msg.postalCode, msg.itemId, DELIVERY_STORES),
+        ]);
+        const ranked = api.rankStores(stores);
+        return { ok: true, item: { ...item, delivery: deliverySummary(ranked) }, stores: ranked, complete: false };
+      }
       const [item, stores] = await Promise.all([
-        getItem(msg.itemId),
-        findStores(msg.postalCode, msg.itemId, MAX_STORES),
+        api.getItem(msg.itemId),
+        api.findStores(msg.postalCode, msg.itemId, MAX_STORES),
       ]);
-      return { ok: true, item, stores: rankStores(stores) };
+      return { ok: true, item, stores: api.rankStores(stores) };
     }
     case "findInStock": {
+      if (msg.mode === "delivery") {
+        const stores = api.rankStores(await api.findDeliveryStores(msg.postalCode, msg.itemId, DELIVERY_STORES_WIDE));
+        return {
+          ok: true, inStock: stores.filter((s) => s.status === "available"), searched: stores.length,
+          checkedIds: stores.map((s) => s.id), complete: true, rateLimited: false,
+        };
+      }
       if (!Array.isArray(msg.nearby)) return { ok: false, code: "unknown", error: "findInStock needs the nearby store list." };
-      return { ok: true, ...(await findInStock(msg)) };
+      return { ok: true, ...(await api.findInStock(msg)) };
     }
     case "selectStore": {
-      const { storeId } = await selectStore(msg.store, msg.postalCode);
+      const { storeId } = await api.selectStore(msg.store, msg.postalCode);
       return { ok: true, storeId };
     }
     default:
@@ -63,7 +85,9 @@ async function handle(msg) {
   }
 }
 
-chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
-  handle(msg).then(sendResponse, (err) => sendResponse(toErrorResponse(err)));
-  return true; // keep the channel open for the async response
-});
+if (globalThis.chrome?.runtime?.onMessage) {
+  chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
+    handleMessage(msg).then(sendResponse, (err) => sendResponse(toErrorResponse(err)));
+    return true; // keep the channel open for the async response
+  });
+}
