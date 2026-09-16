@@ -1,0 +1,131 @@
+{
+ "data": {
+  "product": {
+   "id": "PRD1SZQHN3LOSE0",
+   "usItemId": "1SZQHN3LOSE0",
+   "name": "PlayStation®5 Pro Console",
+   "canonicalUrl": "/en/ip/PlayStation-5-Pro-Console/1SZQHN3LOSE0",
+   "availabilityStatus": "OUT_OF_STOCK",
+   "availabilityStatusV2": {
+    "display": "Out of stock",
+    "value": "OUT_OF_STOCK"
+   },
+   "priceInfo": {
+    "dropPrice": false,
+    "priceDisplayCodes": {
+     "clearance": null,
+     "eligibleForAssociateDiscount": null,
+     "finalCostByWeight": null,
+     "priceDisplayCondition": null,
+     "reducedPrice": null,
+     "rollback": null,
+     "submapType": null,
+     "isB2BPrice": false,
+     "pricePerUnitUom": "EA",
+     "priceDisplayType": "UNKNOWN",
+     "priceComparedToNew": false
+    },
+    "currentPrice": {
+     "price": 827,
+     "priceString": "$827.00",
+     "variantPriceString": "$827.00",
+     "currencyUnit": "CAD",
+     "bestValue": null,
+     "supportText": null,
+     "priceDisplay": "$827.00"
+    },
+    "basePrice": null,
+    "wasPrice": null,
+    "comparisonPrice": null,
+    "unitPrice": null,
+    "savings": null,
+    "savingsAmount": null,
+    "secondaryOfferBoost": null,
+    "shipPrice": null,
+    "isPriceReduced": false,
+    "priceReducedDisplay": null,
+    "subscriptionPrice": null,
+    "priceRange": {
+     "minPrice": null,
+     "maxPrice": null,
+     "priceString": null,
+     "currencyUnit": null,
+     "denominations": null
+    },
+    "listPrice": null,
+    "capType": null,
+    "volumePriceTiers": [],
+    "walmartFundedAmount": null,
+    "wPlusEarlyAccessPrice": null,
+    "additionalFees": {
+     "dutyFee": {
+      "price": null,
+      "priceString": null
+     },
+     "shippingAndImportFee": {
+      "price": null,
+      "priceString": null
+     },
+     "giftCardMarginAndFee": null,
+     "estimatedTotalPrice": {
+      "price": null,
+      "priceString": null
+     },
+     "countryName": null
+    },
+    "taxInfo": null
+   },
+   "imageInfo": {
+    "allImages": [
+     {
+      "id": "76F4987A4051D4AD9ACC2BF71FEF1E46",
+      "url": "https://i5.walmartimages.ca/asr/4c0752c7-2c89-4d3a-9399-2ceb78ce8585.76f4987a4051d4ad9acc2bf71fef1e46.jpeg",
+      "zoomable": true
+     }
+    ],
+    "thumbnailUrl": "https://i5.walmartimages.ca/asr/4c0752c7-2c89-4d3a-9399-2ceb78ce8585.76f4987a4051d4ad9acc2bf71fef1e46.jpeg",
+    "thumbnailAspectRatio": null
+   },
+   "pickupOption": {
+    "slaTier": null,
+    "accessTypes": [],
+    "availabilityStatus": null,
+    "storeName": null,
+    "storeId": null
+   },
+   "shippingOption": {
+    "availabilityStatus": null,
+    "slaTier": null,
+    "deliveryDate": null,
+    "maxDeliveryDate": null,
+    "shipMethod": null,
+    "shipPrice": null,
+    "internationalShipping": null
+   },
+   "availableFulfillmentOptions": [],
+   "fulfillmentType": null,
+   "offerType": "3P",
+   "sellerName": "DealWiz",
+   "sellerDisplayName": "DealWiz",
+   "sellerType": "EXTERNAL",
+   "shippingRestriction": false,
+   "fulfillmentSummary": null,
+   "location": {
+    "postalCode": "L4T 9Z0",
+    "stateOrProvinceCode": "ON",
+    "city": "Mississauga",
+    "storeIds": [
+     "3135"
+    ],
+    "addressId": null,
+    "intent": "DELIVERY",
+    "mpPickupLocation": null,
+    "pickupLocation": {
+     "storeId": "1061",
+     "accessPointId": null,
+     "accessType": null
+    }
+   }
+  }
+ }
+}

@@ -13,6 +13,13 @@ describe("deliveryText", () => {
     expect(deliveryText({ status: "unknown", quantity: null, eta: null }, "M5V 3L9")).toBe("Delivery to M5V 3L9: Unknown");
     expect(deliveryText({ status: "available", quantity: null, eta: null }, "M5V 3L9")).toBe("Delivery to M5V 3L9: In stock");
   });
+  it("names the seller when the item ships from a marketplace seller rather than the retailer", () => {
+    expect(deliveryText({ status: "available", quantity: null, eta: "arrives Sep 21", seller: "Growcanada" }, "L4K 0P8"))
+      .toBe("Delivery to L4K 0P8: In stock · arrives Sep 21 · Ships from Growcanada");
+    expect(deliveryText({ status: "out_of_stock", quantity: null, eta: null, seller: "Growcanada" }, "L4K 0P8"))
+      .toBe("Delivery to L4K 0P8: Out of stock · Ships from Growcanada");
+  });
+
   it("returns nothing for an adapter that does not report delivery", () => {
     expect(deliveryText(null, "M5V 3L9")).toBe("");
     expect(deliveryText(undefined, "M5V 3L9")).toBe("");
@@ -31,6 +38,11 @@ describe("deliveryModeStatus", () => {
     expect(deliveryModeStatus({ ...item, delivery: { status: "out_of_stock", quantity: 0, eta: null } }, "M5V 3L9"))
       .toBe("This item cannot be delivered to M5V 3L9.");
   });
+  it("blames the seller, not the postal code, when a marketplace offer is out of stock", () => {
+    expect(deliveryModeStatus({ ...item, delivery: { status: "out_of_stock", quantity: null, eta: null, seller: "DealWiz" } }, "T3A 5S8"))
+      .toBe("DealWiz has this out of stock.");
+  });
+
   it("says the retailer did not answer when the status is unknown or missing", () => {
     expect(deliveryModeStatus({ ...item, delivery: { status: "unknown", quantity: null, eta: null } }, "M5V 3L9"))
       .toBe("This store did not say whether it delivers to M5V 3L9.");

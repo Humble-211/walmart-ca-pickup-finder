@@ -60,7 +60,7 @@ export function createJobs({ forward, storage, now = Date.now }) {
     try {
       res = await forward({
         type: "findInStock", retailer: job.retailer, itemId: job.itemId, postalCode: job.postalCode, mode: job.mode,
-        nearby: job.nearby, checkedIds: job.checkedIds, itemUrl: job.item?.url,
+        nearby: job.nearby, checkedIds: job.checkedIds, itemUrl: job.item?.url, item: job.item,
       });
     } catch (err) {
       return fail(job, null, String(err?.message ?? err));

@@ -57,7 +57,12 @@ export async function handleMessage(msg, deps = {}) {
           api.findDeliveryStores(msg.postalCode, msg.itemId, DELIVERY_STORES),
         ]);
         const ranked = api.rankStores(stores);
-        return { ok: true, item: { ...item, delivery: deliverySummary(ranked) }, stores: ranked, complete: false };
+        const withDelivery = { ...item, delivery: deliverySummary(ranked, item) };
+        // A marketplace seller's item is stocked in none of walmart's own nodes, so the list
+        // would be ten "Out of stock" rows about an item that ships. Drop it, and say the
+        // answer is complete: widening the node count cannot change it.
+        if (item.soldByThirdParty) return { ok: true, item: withDelivery, stores: [], complete: true };
+        return { ok: true, item: withDelivery, stores: ranked, complete: false };
       }
       const [item, stores] = await Promise.all([
         api.getItem(msg.itemId),
@@ -67,6 +72,10 @@ export async function handleMessage(msg, deps = {}) {
     }
     case "findInStock": {
       if (msg.mode === "delivery") {
+        if (msg.item?.soldByThirdParty) {
+          // Nothing to widen: no walmart node answers for this offer.
+          return { ok: true, inStock: [], searched: 0, checkedIds: [], complete: true, rateLimited: false, delivery: deliverySummary([], msg.item) };
+        }
         const stores = api.rankStores(await api.findDeliveryStores(msg.postalCode, msg.itemId, DELIVERY_STORES_WIDE));
         return {
           ok: true, inStock: stores.filter((s) => s.status === "available"), searched: stores.length,

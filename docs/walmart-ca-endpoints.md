@@ -174,6 +174,45 @@ and 1188 are the reverse. The delivery query also returns nodes the pickup query
 never does (1801, 1150, 1803, 1151, 3000). A rural postal code (`K0J 1J0`)
 returns the same single node either way.
 
-`ItemById` also carries `shippingOption`, `fulfillmentSummary[]` and
-`fulfillmentLabel[]`, but those describe shipping to the address saved in the
-user's session, not to a postal code, so the adapter does not use them.
+### Third-party (marketplace) offers
+
+`nearByNodes` only knows about walmart's own stores and warehouses, so it cannot
+answer delivery for an item sold by a marketplace seller: every node reports
+`OUT_OF_STOCK` even while the seller ships the item across the country. Verified
+2026-09-16 with `1FOYT36S2OIK` (Refurbished Apple Watch Series 7, sold and
+shipped by Growcanada) against `L4K 0P8`: all 10 delivery nodes `OUT_OF_STOCK`,
+while `ItemById` reports `availabilityStatus: "IN_STOCK"` and
+`shippingOption.availabilityStatus: "AVAILABLE"`, free, arriving in 5 days.
+
+The discriminator is `offerType`, not `fulfillmentType`: `2E6595RWRM0G` is
+`offerType: "3P"` with `fulfillmentType: "FC"` (a third-party seller whose stock
+sits in walmart's own warehouse) and its nodes are `OUT_OF_STOCK` too, whereas
+the 1P `6000208927194` answers `IN_STOCK` at 1 of 10 nodes for the same postal
+code. So the adapter treats `offerType: "3P"` or `sellerType: "EXTERNAL"` as
+"the nodes cannot answer" and uses the product's own shipping fields instead.
+
+`ItemById` offer fields the adapter reads:
+
+```
+data.product.offerType                     "1P" | "3P"
+data.product.sellerType                    "INTERNAL" | "EXTERNAL"
+data.product.sellerName                    "Walmart" | "Growcanada"
+data.product.shippingRestriction           true = this offer will not ship to the destination
+data.product.shippingOption.availabilityStatus  "AVAILABLE" | ...
+data.product.shippingOption.deliveryDate / .maxDeliveryDate  ISO, shown as "arrives Sep 21"
+```
+
+An out-of-stock 3P offer returns `shippingOption` as an object with every field
+`null`, not as a missing field. Verified 2026-09-16 with `1SZQHN3LOSE0` (PS5 Pro,
+sold by DealWiz): `availabilityStatus: "OUT_OF_STOCK"`,
+`availabilityStatusV2.display: "Out of stock"`, `availableFulfillmentOptions: []`,
+`transactableOfferCount: 0`, `showAtc: false`, and a blank `shippingOption`. So the
+product's own `availabilityStatus` has to be read before the shipping fields:
+reading the blank `shippingOption` first reports "Unknown" for an item the site
+plainly calls out of stock.
+
+`shippingOption` describes shipping to the address in the user's session rather
+than to the typed postal code, so for walmart's own (1P) items the per-node
+answer is still preferred; `shippingOption` is only consulted for a 3P offer, where
+no node can answer and the seller ships nationally. `fulfillmentSummary[]` and
+`fulfillmentLabel[]` remain unused.

@@ -1,7 +1,8 @@
 import { describe, it, expect, vi } from "vitest";
 import { handleMessage } from "../src/retailers/walmart/content.js";
 
-const item = { id: "1", name: "Thing", url: "https://www.walmart.ca/en/ip/1", retailer: "walmart", pickupEligible: true };
+const item = { id: "1", name: "Thing", url: "https://www.walmart.ca/en/ip/1", retailer: "walmart", pickupEligible: true, soldByThirdParty: false, sellerName: "Walmart", shipping: null };
+const thirdParty = { ...item, pickupEligible: false, soldByThirdParty: true, sellerName: "Growcanada", shipping: { status: "available", quantity: null, eta: "arrives Sep 21" } };
 const store = (id, status) => ({ id, name: id, address: "", postalCode: "", distanceKm: Number(id), status, url: null, accessPointId: "ap" + id });
 
 describe("walmart delivery mode", () => {
@@ -29,6 +30,28 @@ describe("walmart delivery mode", () => {
     expect(res.complete).toBe(true);
     expect(res.checkedIds).toEqual(["1", "2"]);
     expect(res.delivery).toEqual({ status: "available", quantity: null, eta: null }); // reflects the widened node list, not the stale first-10 answer
+  });
+
+  // walmart's delivery nodes are its own stores; they never stock a marketplace seller's item,
+  // so listing them would show ten "Out of stock" rows for an item that ships tomorrow.
+  it("answers a third-party offer from the offer itself and lists no walmart nodes", async () => {
+    const deps = {
+      getItem: vi.fn(async () => thirdParty),
+      findDeliveryStores: vi.fn(async () => [store("1", "out_of_stock"), store("2", "out_of_stock")]),
+    };
+    const res = await handleMessage({ type: "lookup", itemId: "1", postalCode: "L4K 0P8", mode: "delivery" }, deps);
+    expect(res.item.delivery).toEqual({ status: "available", quantity: null, eta: "arrives Sep 21", seller: "Growcanada" });
+    expect(res.stores).toEqual([]);
+    expect(res.complete).toBe(true); // there is nothing farther to widen to
+  });
+
+  it("does not widen the node search for a third-party offer", async () => {
+    const deps = { findDeliveryStores: vi.fn(async () => [store("1", "out_of_stock")]) };
+    const res = await handleMessage({ type: "findInStock", itemId: "1", postalCode: "L4K 0P8", mode: "delivery", nearby: [], item: thirdParty }, deps);
+    expect(deps.findDeliveryStores).not.toHaveBeenCalled();
+    expect(res.delivery.status).toBe("available");
+    expect(res.inStock).toEqual([]);
+    expect(res.complete).toBe(true);
   });
 
   it("leaves pickup mode alone", async () => {

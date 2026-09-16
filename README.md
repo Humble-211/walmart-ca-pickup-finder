@@ -61,6 +61,12 @@ postal code you typed, so delivery mode shows which locations have it (see
 `docs/walmart-ca-endpoints.md`). It reports no count and no delivery date, so that line
 carries a status only.
 
+Walmart marketplace items are the exception. An item sold by a third-party seller is
+stocked in none of Walmart's own stores or warehouses, so every delivery node reports it
+out of stock even when the seller ships it across the country. For those offers the
+extension reads the product's own shipping answer instead of the nodes, shows the delivery
+date Walmart quotes, names the seller, and lists no store rows, because none of them apply.
+
 ## Adding a retailer
 
 Create `src/retailers/<name>/{urls.js,content.js}` — `walmart/urls.js` is the

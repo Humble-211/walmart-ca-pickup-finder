@@ -233,6 +233,20 @@
      "accessPointId": null,
      "accessType": null
     }
+   },
+   "offerType": "1P",
+   "sellerName": "Walmart",
+   "sellerDisplayName": "Walmart",
+   "sellerType": "INTERNAL",
+   "shippingRestriction": false,
+   "shippingOption": {
+    "availabilityStatus": "AVAILABLE",
+    "slaTier": null,
+    "deliveryDate": "2026-09-17T19:00:00.000Z",
+    "maxDeliveryDate": null,
+    "shipMethod": null,
+    "shipPrice": null,
+    "internationalShipping": null
    }
   }
  }

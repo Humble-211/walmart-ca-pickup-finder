@@ -1,0 +1,179 @@
+{
+ "data": {
+  "product": {
+   "id": "PRD1FOYT36S2OIK",
+   "usItemId": "1FOYT36S2OIK",
+   "name": "Refurbished Apple Watch Series 7 Aluminum 45 mm (GPS + Cellular) Midnight Black (Grade B)",
+   "canonicalUrl": "/en/ip/Refurbished-Apple-Watch-Series-7-Aluminum-45-mm-GPS-Cellular-Midnight-Black-Grade-B/1FOYT36S2OIK",
+   "availabilityStatus": "IN_STOCK",
+   "availabilityStatusV2": {
+    "display": "In stock",
+    "value": "IN_STOCK"
+   },
+   "priceInfo": {
+    "dropPrice": false,
+    "priceDisplayCodes": {
+     "clearance": null,
+     "eligibleForAssociateDiscount": null,
+     "finalCostByWeight": null,
+     "priceDisplayCondition": null,
+     "reducedPrice": true,
+     "rollback": null,
+     "submapType": null,
+     "isB2BPrice": false,
+     "pricePerUnitUom": null,
+     "priceDisplayType": "UNKNOWN",
+     "priceComparedToNew": false
+    },
+    "currentPrice": {
+     "price": 219.99,
+     "priceString": "$219.99",
+     "variantPriceString": "$219.99",
+     "currencyUnit": "CAD",
+     "bestValue": null,
+     "supportText": null,
+     "priceDisplay": "Now $219.99"
+    },
+    "basePrice": null,
+    "wasPrice": {
+     "price": 269.99,
+     "priceString": "$269.99",
+     "variantPriceString": null,
+     "currencyUnit": "CAD",
+     "bestValue": null,
+     "supportText": null
+    },
+    "comparisonPrice": null,
+    "unitPrice": null,
+    "savings": null,
+    "savingsAmount": {
+     "amount": 50,
+     "priceString": "SAVE $50.00"
+    },
+    "secondaryOfferBoost": null,
+    "shipPrice": null,
+    "isPriceReduced": true,
+    "priceReducedDisplay": "Now $219.99",
+    "subscriptionPrice": null,
+    "priceRange": {
+     "minPrice": null,
+     "maxPrice": null,
+     "priceString": null,
+     "currencyUnit": null,
+     "denominations": null
+    },
+    "listPrice": null,
+    "capType": null,
+    "volumePriceTiers": [],
+    "walmartFundedAmount": null,
+    "wPlusEarlyAccessPrice": null,
+    "additionalFees": {
+     "dutyFee": {
+      "price": null,
+      "priceString": null
+     },
+     "shippingAndImportFee": {
+      "price": null,
+      "priceString": null
+     },
+     "giftCardMarginAndFee": null,
+     "estimatedTotalPrice": {
+      "price": null,
+      "priceString": null
+     },
+     "countryName": null
+    },
+    "taxInfo": null
+   },
+   "imageInfo": {
+    "allImages": [
+     {
+      "id": "C6301932253EE184F1A678681ED4C685",
+      "url": "https://i5.walmartimages.ca/asr/b552c810-6b75-42ec-b6f6-fdfae9265024.c6301932253ee184f1a678681ed4c685.jpeg",
+      "zoomable": true
+     }
+    ],
+    "thumbnailUrl": "https://i5.walmartimages.ca/asr/b552c810-6b75-42ec-b6f6-fdfae9265024.c6301932253ee184f1a678681ed4c685.jpeg",
+    "thumbnailAspectRatio": null
+   },
+   "pickupOption": {
+    "slaTier": null,
+    "accessTypes": [],
+    "availabilityStatus": null,
+    "storeName": null,
+    "storeId": null
+   },
+   "shippingOption": {
+    "availabilityStatus": "AVAILABLE",
+    "slaTier": null,
+    "deliveryDate": "2026-09-21T19:00:00.000Z",
+    "maxDeliveryDate": null,
+    "shipMethod": null,
+    "shipPrice": {
+     "price": 0,
+     "priceString": "$0.00",
+     "variantPriceString": null,
+     "currencyUnit": null,
+     "bestValue": null,
+     "supportText": null
+    },
+    "internationalShipping": null
+   },
+   "availableFulfillmentOptions": [
+    "UNSCHEDULED_DELIVERY"
+   ],
+   "fulfillmentType": "MARKETPLACE",
+   "offerType": "3P",
+   "sellerName": "Growcanada",
+   "sellerDisplayName": "Growcanada",
+   "sellerType": "EXTERNAL",
+   "shippingRestriction": false,
+   "fulfillmentSummary": [
+    {
+     "outOfCountryEligible": null,
+     "fulfillment": "DELIVERY",
+     "storeId": "2000",
+     "deliveryDate": "2026-09-21T19:00:00.000Z",
+     "sla": {
+      "unitOfMeasure": "DAY",
+      "measurementValue": 5,
+      "rank": null
+     },
+     "calculatedSlaDays": null,
+     "fulfillmentMethods": [
+      "UNSCHEDULED"
+     ],
+     "fulfillmentPrice": {
+      "price": 0,
+      "priceString": "$0.00"
+     },
+     "fulfillmentDiscount": null,
+     "fulfillmentBadge": null,
+     "isFreeForWPlus": null,
+     "isExpress": false,
+     "maxDeliveryDate": "2026-09-21T19:00:00.000Z",
+     "regularSla": null,
+     "storeDeliveryDate": null,
+     "storeMaxDeliveryDate": null,
+     "storeTimezone": "America/Toronto"
+    }
+   ],
+   "location": {
+    "postalCode": "L4T 9Z0",
+    "stateOrProvinceCode": "ON",
+    "city": "Mississauga",
+    "storeIds": [
+     "3135"
+    ],
+    "addressId": null,
+    "intent": "DELIVERY",
+    "mpPickupLocation": null,
+    "pickupLocation": {
+     "storeId": "1061",
+     "accessPointId": null,
+     "accessType": null
+    }
+   }
+  }
+ }
+}

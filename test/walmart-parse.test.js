@@ -1,10 +1,13 @@
 import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
 import { parseStores, parseItem, deliverySummary } from "../src/retailers/walmart/parse.js";
+import { shortDate } from "../src/lib/dates.js";
 import { WalmartApiError } from "../src/lib/errors.js";
 
 const nearBy = JSON.parse(readFileSync(new URL("./fixtures/nearByNodes.json", import.meta.url), "utf8"));
 const item = JSON.parse(readFileSync(new URL("./fixtures/itemById.json", import.meta.url), "utf8"));
+const marketplaceItem = JSON.parse(readFileSync(new URL("./fixtures/itemById-marketplace.json", import.meta.url), "utf8"));
+const marketplaceOos = JSON.parse(readFileSync(new URL("./fixtures/itemById-marketplace-oos.json", import.meta.url), "utf8"));
 
 describe("parseStores", () => {
   it("returns an empty list when walmart reports no pickup node near the point", () => {
@@ -80,7 +83,42 @@ describe("parseItem", () => {
       imageUrl: "https://i5.walmartimages.ca/asr/b7d197af-6dfa-4e8d-9b0d-299d1f914c4d.06c9ddf4c33575f5cb67360e68ce52fd.jpeg",
       url: "https://www.walmart.ca/en/ip/Bounty-Paper-Towel-8-Rolls-16-Regular-Rolls-Equivalent/6000208927194",
       pickupEligible: true,
+      soldByThirdParty: false,
+      sellerName: "Walmart",
+      shipping: { status: "available", quantity: null, eta: `arrives ${shortDate("2026-09-17T19:00:00.000Z")}` },
     });
+  });
+
+  it("marks a third-party offer and carries its seller and shipping answer", () => {
+    const parsed = parseItem(marketplaceItem);
+    expect(parsed.soldByThirdParty).toBe(true);
+    expect(parsed.sellerName).toBe("Growcanada");
+    expect(parsed.pickupEligible).toBe(false);
+    expect(parsed.shipping).toEqual({ status: "available", quantity: null, eta: `arrives ${shortDate("2026-09-21T19:00:00.000Z")}` });
+  });
+
+  it("reports no shipping answer when an in-stock product carries no shippingOption", () => {
+    const copy = structuredClone(item);
+    copy.data.product.shippingOption = null;
+    expect(parseItem(copy).shipping).toBeNull();
+  });
+
+  // An out-of-stock marketplace offer comes back with every shippingOption field nulled, but
+  // the product itself still says OUT_OF_STOCK. That is a real answer, not a missing one.
+  it("reads the product's own out-of-stock answer when shippingOption is blank", () => {
+    const parsed = parseItem(marketplaceOos);
+    expect(parsed.soldByThirdParty).toBe(true);
+    expect(parsed.sellerName).toBe("DealWiz");
+    expect(parsed.shipping).toEqual({ status: "out_of_stock", quantity: null, eta: null });
+  });
+
+  it("calls shipping out of stock when the offer is restricted or the product is out of stock", () => {
+    const restricted = structuredClone(marketplaceItem);
+    restricted.data.product.shippingRestriction = true;
+    expect(parseItem(restricted).shipping.status).toBe("out_of_stock");
+    const gone = structuredClone(marketplaceItem);
+    gone.data.product.availabilityStatus = "OUT_OF_STOCK";
+    expect(parseItem(gone).shipping.status).toBe("out_of_stock");
   });
 
   it("marks pickupEligible false when pickupOption.availabilityStatus is null", () => {
@@ -154,5 +192,33 @@ describe("deliverySummary", () => {
   it("is unknown when no node reports a status, or there are no nodes at all", () => {
     expect(deliverySummary([store("a", "unknown")]).status).toBe("unknown");
     expect(deliverySummary([]).status).toBe("unknown");
+  });
+
+  // Walmart's nodes are its own stores. A third-party offer is never stocked in them, so every
+  // node answers OUT_OF_STOCK even while the seller ships the item nationwide: the product's own
+  // shipping answer is the only truthful one.
+  it("ignores the nodes for a third-party offer and uses the offer's shipping answer", () => {
+    const third = parseItem(marketplaceItem);
+    expect(deliverySummary([store("a", "out_of_stock"), store("b", "out_of_stock")], third))
+      .toEqual({ status: "available", quantity: null, eta: `arrives ${shortDate("2026-09-21T19:00:00.000Z")}`, seller: "Growcanada" });
+  });
+
+  it("reports an out-of-stock third-party offer as out of stock, not unknown", () => {
+    const third = parseItem(marketplaceOos);
+    expect(deliverySummary([store("a", "out_of_stock")], third))
+      .toEqual({ status: "out_of_stock", quantity: null, eta: null, seller: "DealWiz" });
+  });
+
+  it("is unknown for a third-party offer whose shipping answer is missing, never the nodes' out of stock", () => {
+    const copy = structuredClone(marketplaceItem);
+    copy.data.product.shippingOption = null;
+    const third = parseItem(copy);
+    expect(deliverySummary([store("a", "out_of_stock")], third).status).toBe("unknown");
+  });
+
+  it("still trusts the nodes for a first-party item", () => {
+    const own = parseItem(item);
+    expect(deliverySummary([store("a", "out_of_stock"), store("b", "available")], own).status).toBe("available");
+    expect(deliverySummary([store("a", "out_of_stock")], own).status).toBe("out_of_stock");
   });
 });
