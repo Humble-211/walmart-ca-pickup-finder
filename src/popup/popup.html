@@ -13,7 +13,12 @@
     <label>Postal code
       <input id="postal" type="text" placeholder="M5V 3L9" maxlength="7" required>
     </label>
-    <button id="submit" type="submit">Find pickup stores</button>
+    <fieldset class="modes">
+      <legend>Fulfillment</legend>
+      <label><input type="radio" name="mode" value="pickup" checked> Pickup</label>
+      <label><input type="radio" name="mode" value="delivery"> Delivery</label>
+    </fieldset>
+    <button id="submit" type="submit">Find stock</button>
   </form>
 
   <p id="error" class="error" hidden></p>
@@ -30,7 +35,7 @@
   </section>
 
   <section id="nearest" class="nearest" hidden>
-    <h2>Nearest in stock</h2>
+    <h2 id="nearestHeading">Nearest in stock</h2>
     <p id="nearestNote" class="note" hidden></p>
     <ol id="nearestStores" class="stores"></ol>
     <button id="searchMore" type="button" class="secondary" hidden>Keep searching farther</button>

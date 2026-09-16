@@ -5,10 +5,12 @@
 import { parseProductUrl, RETAILERS } from "../retailers/index.js";
 import { normalizePostalCode } from "../lib/postal-code.js";
 import { formatError } from "../lib/errors.js";
-import { deliveryText } from "../lib/delivery.js";
+import { deliveryText, deliveryModeStatus } from "../lib/delivery.js";
 import { JOB_KEY } from "../lib/job.js";
 
 const $ = (id) => document.getElementById(id);
+const selectedMode = () => document.querySelector('input[name="mode"]:checked')?.value ?? "pickup";
+const setMode = (mode) => { const el = document.querySelector(`input[name="mode"][value="${mode}"]`); if (el) el.checked = true; };
 const STATUS_LABEL = { available: "In stock", out_of_stock: "Out of stock", unknown: "Unknown" };
 const NEAREST_SHOWN = 3;
 
@@ -58,7 +60,7 @@ function storeRow(s) {
   badge.classList.add(s.status);
   li.querySelector(".distance").textContent = s.distanceKm == null ? "" : `${s.distanceKm.toFixed(1)} km`;
   const btn = li.querySelector(".pickup");
-  if (job?.retailer === "walmart") {
+  if (job?.retailer === "walmart" && job?.mode !== "delivery") {
     btn.textContent = "Order pickup";
     btn.disabled = !s.accessPointId;
     btn.addEventListener("click", () => orderPickup(s));
@@ -75,6 +77,7 @@ function statusText(j) {
   const label = RETAILERS[j.retailer]?.label ?? "pickup";
   if (j.phase === "lookup") return "Looking up…";
   if (j.phase === "searching") return j.search ? `Searching farther stores… ${j.search.searched} checked, ${j.search.remaining} to go` : "Searching farther stores…";
+  if (j.mode === "delivery") return deliveryModeStatus(j.item, j.postalCode);
   if (j.item && !j.nearby.length) {
     if (j.item.pickupEligible === false) return "This item is not offered for store pickup."; // the item notice stays visible: it is the reason
     if (!j.search) return `No ${label} pickup store found near that postal code.`;
@@ -87,6 +90,15 @@ function nearestNote(j) {
   const label = RETAILERS[j.retailer]?.label ?? "This store";
   const host = RETAILERS[j.retailer]?.host ?? "the site";
   const s = j.search;
+  if (j.mode === "delivery") {
+    if (!s || s.complete) return { text: "", more: false };
+    return {
+      text: j.inStock.length
+        ? "Showing the delivery locations nearest you. There may be more."
+        : "No delivery location near you has it. Keep searching to check more.",
+      more: true,
+    };
+  }
   if (j.phase === "interrupted") return { text: "The search was interrupted (the browser paused the extension). Keep searching to continue.", more: true };
   if (j.phase === "error" && j.item) return { text: "", more: true };
   if (!s) return { text: "", more: false };
@@ -100,6 +112,8 @@ function nearestNote(j) {
 
 function render(j) {
   job = j;
+  if (j?.mode) setMode(j.mode); // a job started by another popup wins over the remembered choice
+  const delivery = j?.mode === "delivery";
   const busy = j?.phase === "lookup" || j?.phase === "searching";
   $("submit").disabled = busy;
   if (!j) {
@@ -112,12 +126,16 @@ function render(j) {
   }
   if (!$("item").value && j.input) $("item").value = j.input;
   renderItem(j.item);
-  $("stores").replaceChildren(...j.nearby.map(storeRow));
-  $("nearbyHeading").hidden = !j.nearby.length;
+  $("stores").replaceChildren(...(delivery ? [] : j.nearby.map(storeRow)));
+  $("nearbyHeading").hidden = delivery || !j.nearby.length;
   // Per-store availability outranks the buy box's pickup flag (a marketplace offer can hide it).
   if (j.nearby.some((s) => s.status !== "unknown")) $("itemNotice").hidden = true;
-  const showNearest = Boolean(j.item) && (j.search != null || j.phase === "interrupted" || (j.phase === "error" && j.nearby.length > 0));
+  const showNearest = delivery
+    // also when the list is empty but can still be widened: "Keep searching farther" lives in this box
+    ? j.inStock.length > 0 || j.search?.complete === false
+    : Boolean(j.item) && (j.search != null || j.phase === "interrupted" || (j.phase === "error" && j.nearby.length > 0));
   $("nearest").hidden = !showNearest;
+  $("nearestHeading").textContent = delivery ? "Delivers from" : "Nearest in stock";
   $("nearestStores").replaceChildren(...j.inStock.slice(0, NEAREST_SHOWN).map(storeRow));
   const { text, more } = nearestNote(j);
   $("nearestNote").textContent = text;
@@ -169,9 +187,10 @@ $("form").addEventListener("submit", (ev) => {
   const postalCode = normalizePostalCode($("postal").value);
   if (!postalCode) { render(null); showError("Enter a valid Canadian postal code (e.g. M5V 3L9)."); return; }
   $("postal").value = postalCode;
-  chrome.storage.local.set({ postalCode });
+  const mode = selectedMode();
+  chrome.storage.local.set({ postalCode, mode });
   showError("");
-  send({ type: "startJob", retailer: parsed.retailer, itemId: parsed.itemId, postalCode, input: input.trim() });
+  send({ type: "startJob", retailer: parsed.retailer, itemId: parsed.itemId, postalCode, mode, input: input.trim() });
 });
 
 $("searchMore").addEventListener("click", () => send({ type: "continueJob" }));
@@ -181,8 +200,9 @@ chrome.storage.onChanged.addListener((changes, area) => {
   if (area === "session" && changes[JOB_KEY]) render(changes[JOB_KEY].newValue ?? null);
 });
 
-chrome.storage.local.get("postalCode").then(({ postalCode }) => {
+chrome.storage.local.get(["postalCode", "mode"]).then(({ postalCode, mode }) => {
   if (postalCode && !$("postal").value) $("postal").value = postalCode;
+  if (mode) setMode(mode);
 });
 send({ type: "getJob" });
 

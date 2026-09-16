@@ -34,3 +34,7 @@ h2 { font-size: 13px; margin: 14px 0 0; }
 .note { color: #555; margin: 6px 0 0; }
 .secondary { margin-top: 8px; background: #eee; color: #111; }
 .secondary:disabled { background: #f4f4f4; color: #999; }
+.modes { display: flex; gap: 14px; align-items: center; margin: 0; padding: 0; border: 0; }
+.modes legend { float: left; width: 100%; font-weight: 600; padding: 0; }
+.modes label { display: flex; gap: 4px; align-items: center; font-weight: 400; }
+.modes input { width: auto; margin: 0; }
