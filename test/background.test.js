@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
-import { handle, makeJobs } from "../src/background.js";
+import { handle, makeJobs, makeWatcher, WATCH_ALARM } from "../src/background.js";
 
 function fakeChrome({ tabs = [], answers = {}, pingResults } = {}) {
   const created = [];
@@ -117,5 +117,88 @@ describe("background handle", () => {
     const res = await handle({ type: "startJob", retailer: "staples", itemId: "1", postalCode: "M5V 3L9", mode: "delivery", input: "u" }, { chrome, jobs: { start } });
     expect(start).toHaveBeenCalledWith({ retailer: "staples", itemId: "1", postalCode: "M5V 3L9", mode: "delivery", input: "u" });
     expect(res.job.mode).toBe("delivery");
+  });
+});
+
+function fakeWatcher(over = {}) {
+  return {
+    tick: vi.fn(async () => ({ checked: 0, skipped: null })),
+    list: vi.fn(async () => ({ watches: [{ id: "walmart:1" }], settings: { enabled: true, telegram: { token: "t", chatId: "c" }, intervalMinutes: 5 } })),
+    add: vi.fn(async (w) => ({ id: `${w.retailer}:${w.itemId}` })),
+    remove: vi.fn(async () => {}),
+    setPaused: vi.fn(async (id, paused) => ({ id, paused })),
+    setSettings: vi.fn(async (p) => ({ enabled: true, ...p })),
+    ...over,
+  };
+}
+
+describe("background watch messages", () => {
+  it("returns the watchlist and settings", async () => {
+    const { chrome } = fakeChrome();
+    const watcher = fakeWatcher();
+    const res = await handle({ type: "getWatchState" }, { chrome, watcher });
+    expect(res.ok).toBe(true);
+    expect(res.watches).toHaveLength(1);
+    expect(res.settings.enabled).toBe(true);
+  });
+
+  it("adds a watch without needing a retailer tab", async () => {
+    const { chrome } = fakeChrome();
+    const watcher = fakeWatcher();
+    const res = await handle({ type: "addWatch", retailer: "walmart", itemId: "1", input: "u", postalCode: "T3A 5S8" }, { chrome, watcher });
+    expect(res).toMatchObject({ ok: true, watch: { id: "walmart:1" } });
+    expect(watcher.add).toHaveBeenCalledWith({ retailer: "walmart", itemId: "1", input: "u", postalCode: "T3A 5S8" });
+  });
+
+  it("rejects a watch for a retailer that is not supported", async () => {
+    const { chrome } = fakeChrome();
+    const watcher = fakeWatcher();
+    expect(await handle({ type: "addWatch", retailer: "sears", itemId: "1" }, { chrome, watcher }))
+      .toMatchObject({ ok: false, code: "unsupported" });
+    expect(watcher.add).not.toHaveBeenCalled();
+  });
+
+  it("removes, pauses and updates settings", async () => {
+    const { chrome } = fakeChrome();
+    const watcher = fakeWatcher();
+    expect(await handle({ type: "removeWatch", id: "walmart:1" }, { chrome, watcher })).toEqual({ ok: true });
+    expect(await handle({ type: "pauseWatch", id: "walmart:1", paused: true }, { chrome, watcher })).toMatchObject({ ok: true, watch: { paused: true } });
+    expect(await handle({ type: "setWatchSettings", settings: { intervalMinutes: 9 } }, { chrome, watcher })).toMatchObject({ ok: true, settings: { intervalMinutes: 9 } });
+  });
+
+  it("sends a real test message through the configured bot", async () => {
+    const { chrome } = fakeChrome();
+    const watcher = fakeWatcher();
+    const fetch = vi.fn(async () => ({ ok: true, status: 200, json: async () => ({ ok: true }) }));
+    const res = await handle({ type: "testTelegram" }, { chrome, watcher, fetch });
+    expect(res).toEqual({ ok: true });
+    expect(fetch.mock.calls[0][0]).toBe("https://api.telegram.org/bott/sendMessage");
+  });
+
+  it("says so when a test message is asked for before telegram is configured", async () => {
+    const { chrome } = fakeChrome();
+    const watcher = fakeWatcher({ list: vi.fn(async () => ({ watches: [], settings: { enabled: false, telegram: null, intervalMinutes: 5 } })) });
+    expect(await handle({ type: "testTelegram" }, { chrome, watcher })).toMatchObject({ ok: false });
+  });
+});
+
+describe("makeWatcher", () => {
+  it("asks the retailer's content script and reads the foreground job", async () => {
+    const { chrome } = fakeChrome({ tabs: [{ id: 1, url: "https://www.walmart.ca/en" }] });
+    chrome.storage = {
+      local: (() => { let d = {}; return { get: async (k) => Object.fromEntries((Array.isArray(k) ? k : [k]).filter((x) => x in d).map((x) => [x, d[x]])), set: async (p) => { d = { ...d, ...p }; } }; })(),
+    };
+    const jobs = { get: async () => null };
+    const watcher = makeWatcher(chrome, jobs, 0, async () => ({ ok: true }));
+    await watcher.setSettings({ enabled: true, telegram: { token: "t", chatId: "c" } });
+    await watcher.add({ retailer: "walmart", itemId: "1", input: "u", postalCode: "T3A 5S8" });
+    await watcher.tick();
+    expect(chrome.tabs.sendMessage).toHaveBeenCalledWith(1, expect.objectContaining({ type: "lookup", mode: "delivery" }));
+  });
+});
+
+describe("watch alarm", () => {
+  it("names the alarm the worker listens for", () => {
+    expect(WATCH_ALARM).toBe("watchTick");
   });
 });

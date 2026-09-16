@@ -3,6 +3,8 @@
 // jobs and renders the stored job state, so closing it does not stop the work.
 import { ERROR_MESSAGES } from "./lib/errors.js";
 import { createJobs } from "./lib/job.js";
+import { createWatcher, DEFAULT_SETTINGS, SETTINGS_KEY } from "./lib/watch.js";
+import { sendMessage } from "./lib/telegram.js";
 import { RETAILERS } from "./retailers/index.js";
 
 const READY_TIMEOUT_MS = 15000;
@@ -62,13 +64,48 @@ export function makeJobs(chrome, sleepMs) {
   });
 }
 
-// deps: { chrome, sleepMs, jobs } — injected so tests can run without a service worker.
-export async function handle(msg, { chrome = globalThis.chrome, sleepMs, jobs } = {}) {
+export const WATCH_ALARM = "watchTick";
+
+// The restock monitor. `send` is injected so tests never reach Telegram.
+export function makeWatcher(chrome, jobs, sleepMs, send = sendMessage) {
+  const storage = chrome.storage?.local;
+  return createWatcher({
+    forward: (msg) => forward(chrome, RETAILERS[msg.retailer], msg, sleepMs, FORWARD_ATTEMPTS),
+    storage,
+    getJob: () => jobs.get(),
+    notify: async (text) => {
+      const stored = await storage.get([SETTINGS_KEY]);
+      const telegram = { ...DEFAULT_SETTINGS, ...(stored?.[SETTINGS_KEY] ?? {}) }.telegram;
+      return send({ ...telegram, text });
+    },
+  });
+}
+
+// deps: { chrome, sleepMs, jobs, watcher, send, fetch } — injected so tests can run without a service worker.
+export async function handle(msg, { chrome = globalThis.chrome, sleepMs, jobs, watcher, send = sendMessage, fetch = globalThis.fetch } = {}) {
   switch (msg?.type) {
     case "getJob":
       return { ok: true, job: await jobs.get() };
     case "continueJob":
       return { ok: true, job: await jobs.continueSearch() };
+    case "getWatchState": {
+      const { watches, settings } = await watcher.list();
+      return { ok: true, watches, settings };
+    }
+    case "removeWatch":
+      await watcher.remove(msg.id);
+      return { ok: true };
+    case "pauseWatch":
+      return { ok: true, watch: await watcher.setPaused(msg.id, msg.paused) };
+    case "setWatchSettings":
+      return { ok: true, settings: await watcher.setSettings(msg.settings ?? {}) };
+    case "testTelegram": {
+      const { settings } = await watcher.list();
+      if (!settings.telegram?.token || !settings.telegram?.chatId) {
+        return { ok: false, code: "unknown", error: "Enter a bot token and a chat id first." };
+      }
+      return send({ ...settings.telegram, text: "Pickup Finder is connected. You will hear from this bot when something comes back in stock." }, { fetch });
+    }
   }
   const adapter = RETAILERS[msg?.retailer];
   if (!adapter) return { ok: false, code: "unsupported", error: ERROR_MESSAGES.unsupported };
@@ -88,6 +125,8 @@ export async function handle(msg, { chrome = globalThis.chrome, sleepMs, jobs } 
       await chrome.tabs.create({ url: msg.itemUrl, active: true });
       return res;
     }
+    case "addWatch":
+      return { ok: true, watch: await watcher.add({ retailer: msg.retailer, itemId: msg.itemId, input: msg.input, postalCode: msg.postalCode }) };
     default:
       return { ok: false, code: "unknown", error: `Unknown message type: ${msg?.type}` };
   }
@@ -95,11 +134,17 @@ export async function handle(msg, { chrome = globalThis.chrome, sleepMs, jobs } 
 
 if (globalThis.chrome?.runtime?.onMessage) {
   const jobs = makeJobs(chrome);
+  const watcher = makeWatcher(chrome, jobs);
   jobs.recover(); // a worker restart means any job left mid-flight cannot finish
+  // create() with an existing name replaces it, so this is safe on every worker start.
+  chrome.alarms.create(WATCH_ALARM, { periodInMinutes: 1 });
+  chrome.alarms.onAlarm.addListener((alarm) => {
+    if (alarm.name === WATCH_ALARM) watcher.tick().catch(() => {});
+  });
   chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     if (sender.tab && msg?.type === "searchProgress") { jobs.progress(msg); return false; } // from a content script
     if (!sender.url?.startsWith(chrome.runtime.getURL("/"))) return false; // otherwise only extension pages (the popup) talk to the background
-    handle(msg, { jobs }).then(sendResponse, (err) => sendResponse({ ok: false, code: "unknown", error: String(err?.message ?? err) }));
+    handle(msg, { jobs, watcher }).then(sendResponse, (err) => sendResponse({ ok: false, code: "unknown", error: String(err?.message ?? err) }));
     return true;
   });
 }
