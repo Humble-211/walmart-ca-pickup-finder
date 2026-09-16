@@ -15,6 +15,7 @@ const STATUS_LABEL = { available: "In stock", out_of_stock: "Out of stock", unkn
 const NEAREST_SHOWN = 3;
 
 let job = null; // the last rendered job, for the store-row buttons
+let jobSuppliedMode = false; // true once a rendered job has set the radio, so the async storage restore can't clobber it
 
 // The store labels the registry supports, for the label hint and the unsupported-site message.
 function storesList() {
@@ -112,7 +113,7 @@ function nearestNote(j) {
 
 function render(j) {
   job = j;
-  if (j?.mode) setMode(j.mode); // a job started by another popup wins over the remembered choice
+  if (j?.mode) { setMode(j.mode); jobSuppliedMode = true; } // a job started by another popup wins over the remembered choice, whichever resolves first
   const delivery = j?.mode === "delivery";
   const busy = j?.phase === "lookup" || j?.phase === "searching";
   $("submit").disabled = busy;
@@ -202,7 +203,7 @@ chrome.storage.onChanged.addListener((changes, area) => {
 
 chrome.storage.local.get(["postalCode", "mode"]).then(({ postalCode, mode }) => {
   if (postalCode && !$("postal").value) $("postal").value = postalCode;
-  if (mode) setMode(mode);
+  if (mode && !jobSuppliedMode) setMode(mode);
 });
 send({ type: "getJob" });
 
