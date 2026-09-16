@@ -12,7 +12,6 @@ const $ = (id) => document.getElementById(id);
 const selectedMode = () => document.querySelector('input[name="mode"]:checked')?.value ?? "pickup";
 const setMode = (mode) => { const el = document.querySelector(`input[name="mode"][value="${mode}"]`); if (el) el.checked = true; };
 const STATUS_LABEL = { available: "In stock", out_of_stock: "Out of stock", unknown: "Unknown" };
-const NEAREST_SHOWN = 3;
 
 let job = null; // the last rendered job, for the store-row buttons
 let jobSuppliedMode = false; // true once a rendered job has set the radio, so the async storage restore can't clobber it
@@ -143,7 +142,9 @@ function render(j) {
     : Boolean(j.item) && (j.search != null || j.phase === "interrupted" || (j.phase === "error" && j.nearby.length > 0));
   $("nearest").hidden = !showNearest;
   $("nearestHeading").textContent = delivery ? "Delivers from" : "Nearest in stock";
-  $("nearestStores").replaceChildren(...j.inStock.slice(0, NEAREST_SHOWN).map(storeRow));
+  // Every store found with stock, nearest first, not a sample of them. Chrome caps
+  // the popup at 600px and scrolls past that on its own, so a long list stays usable.
+  $("nearestStores").replaceChildren(...j.inStock.map(storeRow));
   const { text, more } = nearestNote(j);
   $("nearestNote").textContent = text;
   $("nearestNote").hidden = !text;

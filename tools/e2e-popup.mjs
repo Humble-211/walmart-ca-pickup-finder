@@ -53,6 +53,7 @@ try {
     notice: document.getElementById("itemNotice").hidden ? "" : document.getElementById("itemNotice").textContent,
     delivery: document.getElementById("itemDelivery").hidden ? "" : document.getElementById("itemDelivery").textContent,
     nearby: ${text("#stores .store")}, nearest: ${text("#nearestStores .store")}, note: document.getElementById("nearestNote").textContent,
+    nearestRows: document.querySelectorAll("#nearestStores .store").length,
     heading: document.getElementById("nearestHeading").textContent,
     searchMore: !document.getElementById("searchMore").hidden, busy: document.getElementById("submit").disabled })`);
   for (const { url, postal, mode } of scenarios) {
