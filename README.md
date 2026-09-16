@@ -25,6 +25,14 @@ complete it in that tab and run the lookup again.
 
 ## How it works
 
+The popup only starts a lookup; the background worker owns it as a "job"
+(`src/lib/job.js`), runs lookup then the nationwide search through the retailer's
+tab, and writes every step to `chrome.storage.session`. Closing the popup or
+switching tabs does not stop the work: reopening the popup shows the current
+state and keeps updating. The retailer's tab must stay open (in the background
+is fine). If the browser shuts the worker down mid-search, the popup says the
+search was interrupted and "Keep searching farther" resumes it.
+
 Each retailer has an adapter in `src/retailers/<name>/`:
 
 - `urls.js` recognizes product URLs for that domain.

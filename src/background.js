@@ -1,5 +1,8 @@
-// Routes popup messages to the content script of the retailer named in the message.
+// Owns the current lookup-and-search job (src/lib/job.js) and routes its messages to the
+// content script of the retailer named in the message. The popup only starts/continues
+// jobs and renders the stored job state, so closing it does not stop the work.
 import { ERROR_MESSAGES } from "./lib/errors.js";
+import { createJobs } from "./lib/job.js";
 import { RETAILERS } from "./retailers/index.js";
 
 const READY_TIMEOUT_MS = 15000;
@@ -50,11 +53,28 @@ async function forward(chrome, adapter, msg, sleepMs, attempts = 1) {
   }
 }
 
-// deps: { chrome, sleepMs } — injected so tests can run without a service worker.
-export async function handle(msg, { chrome = globalThis.chrome, sleepMs } = {}) {
+// One job runner per worker. chrome.storage.session lives as long as the browser session and
+// is only readable by extension pages, which is exactly the popup's need.
+export function makeJobs(chrome, sleepMs) {
+  return createJobs({
+    forward: (msg) => forward(chrome, RETAILERS[msg.retailer], msg, sleepMs, FORWARD_ATTEMPTS),
+    storage: chrome.storage?.session ?? chrome.storage.local,
+  });
+}
+
+// deps: { chrome, sleepMs, jobs } — injected so tests can run without a service worker.
+export async function handle(msg, { chrome = globalThis.chrome, sleepMs, jobs } = {}) {
+  switch (msg?.type) {
+    case "getJob":
+      return { ok: true, job: await jobs.get() };
+    case "continueJob":
+      return { ok: true, job: await jobs.continueSearch() };
+  }
   const adapter = RETAILERS[msg?.retailer];
   if (!adapter) return { ok: false, code: "unsupported", error: ERROR_MESSAGES.unsupported };
   switch (msg?.type) {
+    case "startJob":
+      return { ok: true, job: await jobs.start({ retailer: msg.retailer, itemId: msg.itemId, postalCode: msg.postalCode, input: msg.input }) };
     case "lookup":
     case "findInStock":
       return forward(chrome, adapter, msg, sleepMs, FORWARD_ATTEMPTS);
@@ -74,9 +94,12 @@ export async function handle(msg, { chrome = globalThis.chrome, sleepMs } = {}) 
 }
 
 if (globalThis.chrome?.runtime?.onMessage) {
+  const jobs = makeJobs(chrome);
+  jobs.recover(); // a worker restart means any job left mid-flight cannot finish
   chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
-    if (!sender.url?.startsWith(chrome.runtime.getURL("/"))) return false; // only extension pages (the popup) talk to the background
-    handle(msg).then(sendResponse, (err) => sendResponse({ ok: false, code: "unknown", error: String(err?.message ?? err) }));
+    if (sender.tab && msg?.type === "searchProgress") { jobs.progress(msg); return false; } // from a content script
+    if (!sender.url?.startsWith(chrome.runtime.getURL("/"))) return false; // otherwise only extension pages (the popup) talk to the background
+    handle(msg, { jobs }).then(sendResponse, (err) => sendResponse({ ok: false, code: "unknown", error: String(err?.message ?? err) }));
     return true;
   });
 }
