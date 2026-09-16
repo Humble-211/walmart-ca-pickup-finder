@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Pickup Finder — Restock monitor</title>
+  <link rel="stylesheet" href="options.css">
+</head>
+<body>
+  <h1>Restock monitor</h1>
+
+  <section>
+    <h2>Telegram</h2>
+    <p class="note">The monitor sends restock alerts through a Telegram bot. Create one with
+      <a href="https://t.me/BotFather" target="_blank" rel="noopener">BotFather</a>, then message your
+      bot once so it is allowed to reply to you.</p>
+    <label>Bot token <input id="token" type="password" placeholder="123456:ABC-DEF..." autocomplete="off"></label>
+    <label>Chat id <input id="chatId" type="text" placeholder="123456789" autocomplete="off"></label>
+    <p class="note">The token is stored in this extension's storage. Other extensions cannot read it,
+      but anyone with access to this Chrome profile on disk can.</p>
+    <button id="test" type="button" class="secondary">Send test message</button>
+    <p id="testResult" class="note" hidden></p>
+  </section>
+
+  <section>
+    <h2>Checking</h2>
+    <label class="row"><input id="enabled" type="checkbox"> Monitor is running</label>
+    <label>Minutes between checks for each item
+      <input id="interval" type="number" min="1" max="60" step="1">
+    </label>
+    <p id="rate" class="note"></p>
+  </section>
+
+  <section>
+    <h2>Watchlist</h2>
+    <p id="empty" class="note" hidden>Nothing is being watched. Paste a product URL in the popup and press
+      "Watch for restock".</p>
+    <ol id="watches" class="watches"></ol>
+  </section>
+
+  <template id="watchRow">
+    <li class="watch">
+      <div class="watch-main">
+        <a class="watch-name" target="_blank" rel="noopener"></a>
+        <div class="watch-meta"></div>
+        <div class="watch-error" hidden></div>
+      </div>
+      <div class="watch-side">
+        <span class="badge"></span>
+        <button class="pause secondary" type="button">Pause</button>
+        <button class="remove secondary" type="button">Remove</button>
+      </div>
+    </li>
+  </template>
+
+  <script src="options.js"></script>
+</body>
+</html>
