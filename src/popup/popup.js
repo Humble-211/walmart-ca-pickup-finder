@@ -208,15 +208,20 @@ $("searchMore").addEventListener("click", () => send({ type: "continueJob" }));
 $("watch").addEventListener("click", async () => {
   const input = $("item").value;
   const parsed = parseProductUrl(input);
-  if (!parsed) { showError(`Paste a product URL from ${storesList()} (or a Walmart item ID).`); return; }
+  if (!parsed) { showError(`Paste a product URL from ${storesList()} (or a Walmart item ID).`); $("watchNote").hidden = true; return; }
   const postalCode = normalizePostalCode($("postal").value);
-  if (!postalCode) { showError("Enter a valid Canadian postal code (e.g. M5V 3L9)."); return; }
+  if (!postalCode) { showError("Enter a valid Canadian postal code (e.g. M5V 3L9)."); $("watchNote").hidden = true; return; }
   $("postal").value = postalCode;
   showError("");
-  const res = await chrome.runtime.sendMessage({
-    type: "addWatch", retailer: parsed.retailer, itemId: parsed.itemId, input: input.trim(), postalCode,
-  });
   const note = $("watchNote");
+  let res;
+  try {
+    res = await chrome.runtime.sendMessage({
+      type: "addWatch", retailer: parsed.retailer, itemId: parsed.itemId, input: input.trim(), postalCode,
+    });
+  } catch (err) {
+    res = { ok: false, error: String(err?.message ?? err) };
+  }
   note.textContent = res?.ok
     ? `Watching for delivery to ${postalCode}. Alerts go to Telegram; set it up in the extension's options.`
     : `Could not watch this: ${res?.error ?? "unknown error"}`;
