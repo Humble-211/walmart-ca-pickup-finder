@@ -15,3 +15,13 @@ export function deliveryText(delivery, postalCode) {
   if (delivery.eta) parts.push(delivery.eta);
   return `Delivery to ${postalCode || "you"}: ${parts.join(" · ")}`;
 }
+
+// The status line for delivery mode when the retailer returns no per-store list: it has to
+// carry the bad news on its own, because there is nothing else on screen to read.
+export function deliveryModeStatus(item, postalCode) {
+  if (!item) return "";
+  const where = postalCode || "you";
+  if (item.delivery?.status === "available") return "";
+  if (item.delivery?.status === "out_of_stock") return `This item cannot be delivered to ${where}.`;
+  return `This store did not say whether it delivers to ${where}.`;
+}
