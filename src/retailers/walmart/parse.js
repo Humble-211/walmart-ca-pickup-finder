@@ -60,3 +60,11 @@ export function parseItem(json) {
     pickupEligible: p.pickupOption?.availabilityStatus != null,
   };
 }
+
+// Delivery nodes -> the Item.delivery summary. Walmart reports no count and no
+// per-postal-code date for delivery, so only the status is real.
+export function deliverySummary(stores) {
+  const known = stores.filter((s) => s.status !== "unknown");
+  const status = stores.some((s) => s.status === "available") ? "available" : known.length ? "out_of_stock" : "unknown";
+  return { status, quantity: null, eta: null };
+}
