@@ -812,7 +812,7 @@ git commit -m "feat: restock watch runner over the delivery lookup"
 - Test: `test/background.test.js`
 
 **Interfaces:**
-- Consumes: `createWatcher` from Task 3, `sendMessage` from Task 1.
+- Consumes: `createWatcher`, `DEFAULT_SETTINGS` and `SETTINGS_KEY` from Task 3; `sendMessage` from Task 1. Import `SETTINGS_KEY` rather than repeating the string `"watchSettings"`, so the storage key has one spelling.
 - Produces:
   - `WATCH_ALARM = "watchTick"`
   - `makeWatcher(chrome, jobs, sleepMs) -> Watcher`
@@ -929,7 +929,7 @@ In `src/manifest.json`, change the `permissions` line and the `host_permissions`
 In `src/background.js`, add to the imports:
 
 ```js
-import { createWatcher, DEFAULT_SETTINGS } from "./lib/watch.js";
+import { createWatcher, DEFAULT_SETTINGS, SETTINGS_KEY } from "./lib/watch.js";
 import { sendMessage } from "./lib/telegram.js";
 ```
 
@@ -946,8 +946,8 @@ export function makeWatcher(chrome, jobs, sleepMs, send = sendMessage) {
     storage,
     getJob: () => jobs.get(),
     notify: async (text) => {
-      const stored = await storage.get(["watchSettings"]);
-      const telegram = { ...DEFAULT_SETTINGS, ...(stored?.watchSettings ?? {}) }.telegram;
+      const stored = await storage.get([SETTINGS_KEY]);
+      const telegram = { ...DEFAULT_SETTINGS, ...(stored?.[SETTINGS_KEY] ?? {}) }.telegram;
       return send({ ...telegram, text });
     },
   });
@@ -1359,7 +1359,6 @@ In `tools/e2e-popup.mjs`, after the existing scenarios finish, add a block that 
 // asserts on the stored status rather than on delivery.
 if (process.env.WATCH) {
   const [url, postal] = process.env.WATCH.split("|");
-  const parsedId = url.split("/").pop();
   console.log(`\n=== watch ${url} @ ${postal}`);
   await openPopup();
   await evalIn(`document.getElementById("item").value = ${JSON.stringify(url)};
@@ -1370,7 +1369,9 @@ if (process.env.WATCH) {
     await chrome.runtime.sendMessage({ type: "setWatchSettings", settings: { enabled: true, telegram: { token: "0:stub", chatId: "0" }, intervalMinutes: 5 } });
     const before = await chrome.runtime.sendMessage({ type: "getWatchState" });
     const id = before.watches[0].id;
-    await new Promise((r) => setTimeout(r, 12000)); // let the one-minute alarm fire
+    // chrome.alarms clamps periodInMinutes: 1 to a full minute, so this has to
+    // outlast it. Anything shorter reads the watch before a single tick has run.
+    await new Promise((r) => setTimeout(r, 70000));
     const after = await chrome.runtime.sendMessage({ type: "getWatchState" });
     return JSON.stringify({ id, watch: after.watches.find((w) => w.id === id) });
   })()`);
