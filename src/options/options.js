@@ -4,7 +4,22 @@
 const $ = (id) => document.getElementById(id);
 const STATUS_LABEL = { available: "In stock", out_of_stock: "Out of stock", unknown: "Unknown" };
 
-const send = (msg) => chrome.runtime.sendMessage(msg);
+function showPageError(msg) {
+  const el = $("pageError");
+  el.textContent = msg ?? "";
+  el.hidden = !msg;
+}
+
+async function send(msg) {
+  try {
+    const res = await chrome.runtime.sendMessage(msg);
+    if (res && res.ok === false) showPageError(res.error ?? "Something went wrong.");
+    return res;
+  } catch (err) {
+    showPageError(String(err?.message ?? err));
+    return { ok: false, error: String(err?.message ?? err) };
+  }
+}
 
 function when(ts) {
   if (!ts) return "never";
@@ -55,7 +70,10 @@ function render({ watches, settings }) {
 
 async function load() {
   const res = await send({ type: "getWatchState" });
-  if (res?.ok) render(res);
+  if (res?.ok) {
+    showPageError("");
+    render(res);
+  }
 }
 
 async function saveSettings() {
