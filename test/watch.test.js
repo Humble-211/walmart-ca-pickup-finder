@@ -201,3 +201,70 @@ describe("alertText", () => {
     expect(alertText("recovery", w)).toContain("PS5 Pro");
   });
 });
+
+describe("tick concurrency", () => {
+  it("refuses to start a second tick while one is still running", async () => {
+    let release;
+    const gate = new Promise((r) => { release = r; });
+    const storage = fakeStorage({ [WATCHES_KEY]: [due()], [SETTINGS_KEY]: configured });
+    const forward = vi.fn(async () => { await gate; return { ok: true, item: item("out_of_stock") }; });
+    const watcher = createWatcher({ forward, storage, getJob: async () => null, notify: async () => ({ ok: true }), now: () => NOW, random: () => 0.5 });
+    const first = watcher.tick();
+    expect(await watcher.tick()).toEqual({ checked: 0, skipped: "running" });
+    release();
+    expect(await first).toEqual({ checked: 1, skipped: null });
+    expect(forward).toHaveBeenCalledTimes(1);
+  });
+
+  it("keeps a watch added while a tick was in flight", async () => {
+    let release;
+    const gate = new Promise((r) => { release = r; });
+    const storage = fakeStorage({ [WATCHES_KEY]: [due({ id: "walmart:1" })], [SETTINGS_KEY]: configured });
+    const forward = vi.fn(async () => { await gate; return { ok: true, item: item("out_of_stock") }; });
+    const watcher = createWatcher({ forward, storage, getJob: async () => null, notify: async () => ({ ok: true }), now: () => NOW, random: () => 0.5 });
+    const first = watcher.tick();
+    // Add a new watch while the tick is in flight
+    await watcher.add({ retailer: "bestbuy", itemId: "9", input: "u", postalCode: "T3A 5S8" });
+    release();
+    expect(await first).toEqual({ checked: 1, skipped: null });
+    // Assert both watches are in the stored list
+    const stored = storage.read()[WATCHES_KEY];
+    expect(stored).toHaveLength(2);
+    expect(stored.map((w) => w.id).sort()).toEqual(["bestbuy:9", "walmart:1"]);
+    // Assert the checked entry got its new status
+    expect(stored.find((w) => w.id === "walmart:1").status).toBe("out_of_stock");
+  });
+
+  it("does not resurrect a watch removed while a tick was in flight", async () => {
+    let release;
+    const gate = new Promise((r) => { release = r; });
+    const storage = fakeStorage({ [WATCHES_KEY]: [due({ id: "walmart:1" })], [SETTINGS_KEY]: configured });
+    const forward = vi.fn(async () => { await gate; return { ok: true, item: item("out_of_stock") }; });
+    const watcher = createWatcher({ forward, storage, getJob: async () => null, notify: async () => ({ ok: true }), now: () => NOW, random: () => 0.5 });
+    const first = watcher.tick();
+    // Remove the watch while the tick is in flight
+    await watcher.remove("walmart:1");
+    release();
+    expect(await first).toEqual({ checked: 1, skipped: null });
+    // Assert the watch was not resurrected
+    const stored = storage.read()[WATCHES_KEY];
+    expect(stored).toEqual([]);
+  });
+
+  it("releases the guard after a tick throws, so the monitor is not wedged", async () => {
+    const storage = fakeStorage({ [WATCHES_KEY]: [due()], [SETTINGS_KEY]: configured });
+    // Make storage.get reject once, then work normally
+    let callCount = 0;
+    const originalGet = storage.get;
+    storage.get = vi.fn(async (keys) => {
+      callCount++;
+      if (callCount === 1) throw new Error("storage error");
+      return originalGet.call(storage, keys);
+    });
+    const watcher = createWatcher({ forward: async () => ({ ok: true, item: item("out_of_stock") }), storage, getJob: async () => null, notify: async () => ({ ok: true }), now: () => NOW, random: () => 0.5 });
+    // First tick throws
+    await expect(watcher.tick()).rejects.toThrow("storage error");
+    // Second tick should work normally (guard is released)
+    expect((await watcher.tick()).checked).toBe(1);
+  });
+});

@@ -31,6 +31,8 @@ export function alertText(alert, watch) {
 }
 
 export function createWatcher({ forward, storage, getJob, notify, now = Date.now, random = Math.random }) {
+  let tickRunning = false;
+
   async function read() {
     const stored = await storage.get([WATCHES_KEY, SETTINGS_KEY]);
     return {
@@ -98,21 +100,34 @@ export function createWatcher({ forward, storage, getJob, notify, now = Date.now
   }
 
   async function tick() {
-    const { watches, settings } = await read();
-    if (!settings.enabled) return { checked: 0, skipped: "disabled" };
-    if (!settings.telegram?.token || !settings.telegram?.chatId) return { checked: 0, skipped: "unconfigured" };
-    const job = await getJob();
-    if (job?.phase === "lookup" || job?.phase === "searching") return { checked: 0, skipped: "busy" };
+    if (tickRunning) return { checked: 0, skipped: "running" };
+    tickRunning = true;
+    try {
+      const { watches, settings } = await read();
+      if (!settings.enabled) return { checked: 0, skipped: "disabled" };
+      if (!settings.telegram?.token || !settings.telegram?.chatId) return { checked: 0, skipped: "unconfigured" };
+      const job = await getJob();
+      if (job?.phase === "lookup" || job?.phase === "searching") return { checked: 0, skipped: "busy" };
 
-    const due = dueWatches(watches, now(), MAX_CHECKS_PER_TICK);
-    if (!due.length) return { checked: 0, skipped: null };
+      const due = dueWatches(watches, now(), MAX_CHECKS_PER_TICK);
+      if (!due.length) return { checked: 0, skipped: null };
 
-    let current = watches;
-    for (const watch of due) {
-      current = replace(current, await check(watch));
+      let checked = [];
+      for (const watch of due) {
+        checked.push(await check(watch));
+      }
+
+      // Merge on write: re-read the stored list and fold checked entries into it
+      const { watches: current } = await read();
+      let merged = current;
+      for (const updated of checked) {
+        merged = replace(merged, updated);
+      }
+      await saveWatches(merged);
+      return { checked: checked.length, skipped: null };
+    } finally {
+      tickRunning = false;
     }
-    await saveWatches(current);
-    return { checked: due.length, skipped: null };
   }
 
   return { tick, list, add, remove, setPaused, setSettings };
