@@ -2,6 +2,8 @@
 // extension over the DevTools protocol, opens the popup and runs one lookup per
 // "<product url>|<postal code>" argument, printing what the popup shows.
 //   npm run build && node tools/e2e-popup.mjs "https://www.shoppersdrugmart.ca/x/p/BB_625273036947|M5V 3L9"
+// With REOPEN=1 the popup is closed a few seconds after each submit and reopened, to check
+// that the job carries on in the background and the reopened popup picks it up.
 // Chrome 137+ ignores --load-extension, so the extension is installed with
 // Extensions.loadUnpacked (needs --enable-unsafe-extension-debugging). Do NOT use
 // --remote-debugging-pipe: it sets navigator.webdriver, which Akamai-fronted sites
@@ -32,14 +34,19 @@ try {
   await new Promise((r) => (ws.onopen = r));
   const { id: extId } = await send("Extensions.loadUnpacked", { path: DIST });
   console.log("installed", extId);
-  const { targetId } = await send("Target.createTarget", { url: `chrome-extension://${extId}/popup/popup.html` });
-  const { sessionId } = await send("Target.attachToTarget", { targetId, flatten: true });
+  const popupUrl = `chrome-extension://${extId}/popup/popup.html`;
+  let targetId, sessionId;
+  const openPopup = async () => {
+    ({ targetId } = await send("Target.createTarget", { url: popupUrl }));
+    ({ sessionId } = await send("Target.attachToTarget", { targetId, flatten: true }));
+    await sleep(1500);
+  };
   const evalIn = async (expression) => {
     const r = await send("Runtime.evaluate", { expression, awaitPromise: true, returnByValue: true }, sessionId);
     if (r.exceptionDetails) throw new Error(JSON.stringify(r.exceptionDetails).slice(0, 500));
     return r.result.value;
   };
-  await sleep(1500);
+  await openPopup();
   const text = (sel) => `[...document.querySelectorAll(${JSON.stringify(sel)})].map((li) => li.innerText.replace(/\\s+/g, " ").trim())`;
   const snapshot = () => evalIn(`JSON.stringify({ error: document.getElementById("error").textContent, status: document.getElementById("status").textContent,
     item: document.getElementById("itemName").textContent, price: document.getElementById("itemPrice").textContent,
@@ -51,9 +58,17 @@ try {
     await evalIn(`(() => { const set = (id, v) => { const el = document.getElementById(id); el.value = v; el.dispatchEvent(new Event("input", { bubbles: true })); };
       set("item", ${JSON.stringify(url)}); set("postal", ${JSON.stringify(postal)}); document.getElementById("form").requestSubmit(); return "submitted"; })()`);
     const t0 = Date.now();
-    let last = "", quiet = 0;
+    let last = "", quiet = 0, reopened = !process.env.REOPEN;
     while (Date.now() - t0 < 240000) { // the background may first open the retailer's tab (up to 15 s), then search up to 40 calls
       await sleep(2500);
+      if (!reopened && Date.now() - t0 > 4000) {
+        reopened = true;
+        await send("Target.closeTarget", { targetId });
+        console.log(`[${((Date.now() - t0) / 1000).toFixed(0)}s] popup closed; reopening in 6 s`);
+        await sleep(6000);
+        await openPopup();
+        console.log(`[${((Date.now() - t0) / 1000).toFixed(0)}s] popup reopened`);
+      }
       const snap = await snapshot();
       if (snap !== last) { console.log(`[${((Date.now() - t0) / 1000).toFixed(0)}s]`, snap); last = snap; quiet = 0; } else quiet++;
       const s = JSON.parse(snap);

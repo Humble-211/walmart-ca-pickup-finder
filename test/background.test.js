@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
-import { handle } from "../src/background.js";
+import { handle, makeJobs } from "../src/background.js";
 
 function fakeChrome({ tabs = [], answers = {}, pingResults } = {}) {
   const created = [];
@@ -78,6 +78,28 @@ describe("background handle", () => {
     chrome.tabs.sendMessage.mockImplementation(async (tabId, msg) => { if (msg.type !== "ping") throw new Error("port closed"); return original(tabId, msg); });
     expect(await handle({ type: "lookup", retailer: "walmart", itemId: "1", postalCode: "M5V 3L9" }, { chrome, sleepMs: 0 })).toMatchObject({ ok: false, code: "no_tab" });
     expect(chrome.tabs.sendMessage.mock.calls.filter((c) => c[1].type === "lookup")).toHaveLength(3);
+  });
+  it("startJob runs the lookup and search through the retailer tab and stores the job", async () => {
+    const { chrome } = fakeChrome({ tabs: [{ id: 1, url: "https://www.staples.ca/" }] });
+    const item = { id: "1", name: "Thing", url: "https://www.staples.ca/products/1", retailer: "staples", pickupEligible: true };
+    const answers = { lookup: { ok: true, item, stores: [{ id: "a", status: "out_of_stock", distanceKm: 1 }] }, findInStock: { ok: true, inStock: [{ id: "z", status: "available", distanceKm: 30 }], searched: 5, checkedIds: ["a", "z"], complete: true } };
+    const original = chrome.tabs.sendMessage.getMockImplementation();
+    chrome.tabs.sendMessage.mockImplementation(async (tabId, msg) => answers[msg.type] ?? original(tabId, msg));
+    const data = {};
+    chrome.storage = { session: { get: async (k) => ({ [k]: data[k] }), set: async (o) => Object.assign(data, o) } };
+    const jobs = makeJobs(chrome, 0);
+    const res = await handle({ type: "startJob", retailer: "staples", itemId: "1", postalCode: "M5V 3L9", input: "https://www.staples.ca/products/1" }, { chrome, jobs });
+    expect(res.job.phase).toBe("lookup");
+    await new Promise((r) => setTimeout(r, 10));
+    const { job } = await handle({ type: "getJob" }, { chrome, jobs });
+    expect(job).toMatchObject({ phase: "done", item, checkedIds: ["a", "z"] });
+    expect(job.inStock.map((s) => s.id)).toEqual(["z"]);
+    expect(data.job.phase).toBe("done");
+    expect(chrome.tabs.sendMessage).toHaveBeenCalledWith(1, expect.objectContaining({ type: "findInStock", itemUrl: item.url }));
+  });
+  it("startJob for an unknown retailer is refused", async () => {
+    const { chrome } = fakeChrome();
+    expect(await handle({ type: "startJob", retailer: "sears", itemId: "1", postalCode: "M5V 3L9" }, { chrome, jobs: makeJobs({ ...chrome, storage: { local: { get: async () => ({}), set: async () => {} } } }, 0) })).toMatchObject({ ok: false, code: "unsupported" });
   });
   it("getTab retries the ping after a reload and still finds the tab", async () => {
     const { chrome } = fakeChrome({
