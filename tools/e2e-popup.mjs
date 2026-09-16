@@ -17,8 +17,8 @@ const DIST = join(dirname(fileURLToPath(import.meta.url)), "..", "dist");
 const CHROME = process.env.CHROME || join(process.env.LOCALAPPDATA ?? "", "Google", "Chrome", "Application", "chrome.exe");
 const PORT = 9222;
 const PROFILE = join(process.env.TEMP ?? "/tmp", `pickup-finder-e2e-${Date.now()}`);
-const scenarios = process.argv.slice(2).map((s) => { const [url, postal] = s.split("|"); return { url, postal }; });
-if (!scenarios.length) { console.error('usage: node tools/e2e-popup.mjs "<product url>|<postal code>" ...'); process.exit(2); }
+const scenarios = process.argv.slice(2).map((s) => { const [url, postal, mode = "pickup"] = s.split("|"); return { url, postal, mode }; });
+if (!scenarios.length) { console.error('usage: node tools/e2e-popup.mjs "<product url>|<postal code>|<mode>" ...'); process.exit(2); }
 
 const chrome = spawn(CHROME, [`--remote-debugging-port=${PORT}`, "--enable-unsafe-extension-debugging", `--user-data-dir=${PROFILE}`, "--no-first-run", "--no-default-browser-check", "about:blank"], { stdio: "ignore" });
 let id = 0; const waiters = new Map(); let ws;
@@ -53,11 +53,14 @@ try {
     notice: document.getElementById("itemNotice").hidden ? "" : document.getElementById("itemNotice").textContent,
     delivery: document.getElementById("itemDelivery").hidden ? "" : document.getElementById("itemDelivery").textContent,
     nearby: ${text("#stores .store")}, nearest: ${text("#nearestStores .store")}, note: document.getElementById("nearestNote").textContent,
+    heading: document.getElementById("nearestHeading").textContent,
     searchMore: !document.getElementById("searchMore").hidden, busy: document.getElementById("submit").disabled })`);
-  for (const { url, postal } of scenarios) {
-    console.log(`\n=== ${url} @ ${postal}`);
+  for (const { url, postal, mode } of scenarios) {
+    console.log(`\n=== ${url} @ ${postal} [${mode}]`);
     await evalIn(`(() => { const set = (id, v) => { const el = document.getElementById(id); el.value = v; el.dispatchEvent(new Event("input", { bubbles: true })); };
-      set("item", ${JSON.stringify(url)}); set("postal", ${JSON.stringify(postal)}); document.getElementById("form").requestSubmit(); return "submitted"; })()`);
+      set("item", ${JSON.stringify(url)}); set("postal", ${JSON.stringify(postal)});
+      document.querySelector('input[name="mode"][value=' + ${JSON.stringify(JSON.stringify(mode))} + ']').checked = true;
+      document.getElementById("form").requestSubmit(); return "submitted"; })()`);
     const t0 = Date.now();
     let last = "", quiet = 0, reopened = !process.env.REOPEN;
     while (Date.now() - t0 < 240000) { // the background may first open the retailer's tab (up to 15 s), then search up to 40 calls

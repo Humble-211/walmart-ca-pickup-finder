@@ -158,15 +158,22 @@ The extension only calls it when the user clicks "Order pickup" for a store.
 `setFulfillmentIntent` (mutation, sets PICKUP/DELIVERY tab preference): not required
 for the flow above. `GlobalIntentCenter`, `Header`, `HomePage*`, `IntlAdV2`: page chrome and ads.
 
-## Delivery (ship-to-home): not wired up
+## Delivery
 
-`ItemById` already returns delivery for the **session's** saved location:
-`shippingOption {availabilityStatus, deliveryDate}`, `fulfillmentSummary[]` and
-`fulfillmentLabel[] {message: "Free delivery over $35, arrives today to Toronto, M1J 2H1",
-postalCode, deliveryDate}`. The variables the persisted query takes carry no postal
-code, and a probe of `postalCode` / `pCode` / `zipCode` / `location` ran into the
-usual 429 penalty box before it could prove anything either way. Changing the
-session's location (the way `setPickup` changes the pickup store) would answer for a
-typed postal code, but it is a side effect on the user's walmart.ca session, so the
-walmart adapter leaves `item.delivery` unset and the popup's delivery line stays
-hidden. Wiring it up needs its own rate-limit-aware discovery round.
+`nearByNodes` answers delivery the same way it answers pickup: send
+`accessTypes: ["DELIVERY_ADDRESS"]` with `checkItemAvailability: true` and a
+postal code, and each node comes back with `product.availabilityStatus` for
+delivery. It needs no session change, unlike `setPickup`. `DELIVERY_ADDRESS` is
+the only delivery access type the schema takes: `DELIVERY`, `HOME_DELIVERY` and
+`SCHEDULED_DELIVERY` are all rejected with `invalid input value at
+$input.accessTypes[0]`, the same error a garbage value gets.
+
+The two fulfillment types really do differ. One item, `M5V 3L9`, `maxCount: 50`:
+store 3635 is `IN_STOCK` for pickup and `OUT_OF_STOCK` for delivery; 3740, 3111
+and 1188 are the reverse. The delivery query also returns nodes the pickup query
+never does (1801, 1150, 1803, 1151, 3000). A rural postal code (`K0J 1J0`)
+returns the same single node either way.
+
+`ItemById` also carries `shippingOption`, `fulfillmentSummary[]` and
+`fulfillmentLabel[]`, but those describe shipping to the address saved in the
+user's session, not to a postal code, so the adapter does not use them.

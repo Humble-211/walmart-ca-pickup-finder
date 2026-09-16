@@ -48,14 +48,18 @@ For Best Buy, Staples and Shoppers, store rows open the product page.
 
 ## Delivery
 
-Alongside the pickup search, the lookup asks the retailer whether the item can be
-**shipped to the postal code** you typed, and the popup shows one line under the price,
-for example `Delivery to M5V 3L9: In stock · 30 available · arrives Sep 22`. The
-wording of the estimate is the retailer's own. Best Buy answers it in the availability
-call it already makes; Staples and Shoppers each take one extra call. Walmart does not:
-its delivery answer follows the store saved in your walmart.ca session rather than a
-postal code, so the line is hidden for Walmart items (see
-`docs/walmart-ca-endpoints.md`).
+The popup asks for a fulfillment type before it searches. **Pickup** lists the
+nearest stores that have the item and then searches the country for the nearest
+one in stock. **Delivery** asks whether the item ships to the postal code you
+typed, and for Walmart also lists the delivery locations that have it, because
+walmart.ca answers pickup and delivery separately: the same item can be in stock
+for pickup at one store and only for delivery at another.
+The wording of the estimate is the retailer's own. Best Buy answers it in the availability
+call it already makes; Staples and Shoppers each take one extra call. Walmart answers per
+delivery location instead: its nodes report delivery stock for the
+postal code you typed, so delivery mode shows which locations have it (see
+`docs/walmart-ca-endpoints.md`). It reports no count and no delivery date, so that line
+carries a status only.
 
 ## Adding a retailer
 
