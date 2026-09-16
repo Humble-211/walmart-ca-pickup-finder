@@ -95,6 +95,9 @@ try {
     const state = await evalIn(`(async () => {
       await chrome.runtime.sendMessage({ type: "setWatchSettings", settings: { enabled: true, telegram: { token: "0:stub", chatId: "0" }, intervalMinutes: 5 } });
       const before = await chrome.runtime.sendMessage({ type: "getWatchState" });
+      // The popup button may have refused the input or the background may have failed:
+      // say so here rather than throwing "cannot read id of undefined" below.
+      if (!before?.ok || !before.watches?.length) return JSON.stringify({ error: "addWatch stored no watch: " + JSON.stringify(before).slice(0, 300) });
       const id = before.watches[0].id;
       // chrome.alarms clamps periodInMinutes: 1 to a full minute, so this has to
       // outlast it. Anything shorter reads the watch before a single tick has run.
@@ -103,6 +106,16 @@ try {
       return JSON.stringify({ id, watch: after.watches.find((w) => w.id === id) });
     })()`);
     console.log(state);
+    // The whole point of this scenario is that the popup button, the alarm and the tick
+    // are wired together. Printing the entry and exiting 0 proves none of that, so an
+    // entry the monitor never checked fails the run.
+    const { error, watch } = JSON.parse(state);
+    if (error) throw new Error(error);
+    if (!watch) throw new Error("the watch disappeared from the list before the tick ran");
+    if (!watch.lastCheckedAt) {
+      throw new Error(`the watch was never checked after 70 s: the alarm did not fire or the tick did not run (status=${watch.status}, failures=${watch.failures}, lastError=${JSON.stringify(watch.lastError)})`);
+    }
+    console.log(`watch checked at ${new Date(watch.lastCheckedAt).toISOString()}: status=${watch.status}`);
   }
   finish(0);
 } catch (err) {
