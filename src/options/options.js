@@ -2,6 +2,8 @@
 // background worker, which owns the storage, so two open copies of this page
 // cannot write over each other.
 import { rateNote } from "../lib/watch.js";
+import { formatError } from "../lib/errors.js";
+import { RETAILERS } from "../retailers/index.js";
 
 const $ = (id) => document.getElementById(id);
 const STATUS_LABEL = { available: "In stock", out_of_stock: "Out of stock", unknown: "Unknown" };
@@ -12,10 +14,33 @@ function showPageError(msg) {
   el.hidden = !msg;
 }
 
+// What to show a person for a failed response. Two things happen here.
+//
+// The error templates in lib/errors.js carry {host}/{label}/{stores} placeholders
+// that only a display site fills in, so anything shown raw reads like "Paste a
+// product URL from {stores}".
+//
+// And `unsupported` has exactly one meaning on this page. Every message it sends
+// is answered before background.js reaches its retailer check, so the only way to
+// get that code back is a background worker that does not know the message at all,
+// which means it is older than this page. Chrome serves these page files from disk
+// on every open but keeps running the service worker it registered when the
+// extension was last loaded, so rebuilding without reloading the extension lands
+// precisely here.
+const storesList = () =>
+  new Intl.ListFormat("en", { type: "conjunction" }).format(Object.values(RETAILERS).map((a) => a.label));
+
+function errorText(res, fallback = "Something went wrong.") {
+  if (res?.code === "unsupported") {
+    return "The extension's background worker is older than this page. Open chrome://extensions, press reload on this extension, then try again.";
+  }
+  return formatError(res?.error ?? fallback, { stores: storesList() });
+}
+
 async function send(msg) {
   try {
     const res = await chrome.runtime.sendMessage(msg);
-    if (res && res.ok === false) showPageError(res.error ?? "Something went wrong.");
+    if (res && res.ok === false) showPageError(errorText(res));
     return res;
   } catch (err) {
     showPageError(String(err?.message ?? err));
@@ -89,7 +114,7 @@ $("test").addEventListener("click", async () => {
   await saveSettings();
   $("test").disabled = true;
   const res = await send({ type: "testTelegram" });
-  $("testResult").textContent = res?.ok ? "Sent. Check Telegram." : `Failed: ${res?.error ?? "unknown error"}`;
+  $("testResult").textContent = res?.ok ? "Sent. Check Telegram." : `Failed: ${errorText(res, "unknown error")}`;
   $("testResult").hidden = false;
   $("test").disabled = false;
 });
